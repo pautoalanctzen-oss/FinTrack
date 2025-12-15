@@ -77,8 +77,8 @@
                     document.documentElement.style.setProperty('--bs-primary', color);
                 } catch {}
             })();
-            // Configura la URL del backend FastAPI
-            const BASE_API = "http://127.0.0.1:8000";
+            // Configura la URL del backend FastAPI (Render)
+            const BASE_API = "https://aplicaci-n-mi.onrender.com";
 
             const form = document.getElementById('login-form');
             const alertBox = document.getElementById('alert');
@@ -203,7 +203,7 @@
                         if (!navigator.onLine) {
                             msg = 'Parece que no hay conexión a internet. Verifica tu red e intenta nuevamente.';
                         } else {
-                            msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté corriendo (http://127.0.0.1:8000/health) y que ningún firewall/antivirus lo bloquee.`;
+                            msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté activo (https://aplicaci-n-mi.onrender.com/health) y que ningún firewall/antivirus lo bloquee.`;
                         }
                     }
                     showAlert(msg, 'danger');
