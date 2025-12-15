@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Login | Aplicación MI</title>
+        <!-- Bootstrap 5 -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+                <style>
+                    :root { --app-bg: #ffffff; }
+                    [data-bs-theme="dark"] { --app-bg: #0f0f0f; }
+                    body { min-height: 100vh; background: var(--app-bg); }
+                    main.page-center { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+                    .card { width: 100%; max-width: 480px; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(2,6,23,.1); overflow: hidden; }
+                    .card-header { background: #ffffff; color:#0f172a; border-bottom: 1px solid #e5e7eb; }
+                    .brand { font-weight: 700; letter-spacing: .3px; font-size: 1.5rem; }
+                    .password-wrapper { position: relative; }
+                    .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; color: #6c757d; padding: 0.25rem 0.5rem; }
+                    .toggle-password svg { width: 20px; height: 20px; }
+                </style>
+    </head>
+    <body>
+        <main class="page-center container py-4">
+            <div class="card">
+                        <div class="card-header text-center py-4">
+                            <div class="brand text-primary">Bienvenido</div>
+                </div>
+                <div class="card-body p-5">
+                    <div id="alert" class="alert d-none" role="alert"></div>
+
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" autocomplete="username" required />
+                        </div>
+                        <div class="mb-2">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <div class="password-wrapper">
+                                <input type="password" class="form-control" id="password" name="password" autocomplete="current-password" required />
+                                <button type="button" class="toggle-password" onclick="toggleLoginPassword()">
+                                    <!-- Ojo cerrado (password oculta) -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-grid mt-3">
+                                            <button id="submit-btn" type="submit" class="btn btn-primary">
+                                                <span class="btn-text">Iniciar Sesión</span>
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                                    <button id="demo-btn" type="button" class="btn btn-outline-secondary mt-2 d-none" onclick="loginDemo()">Entrar en modo demo</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-4">
+                        <small class="text-muted">¿No tienes cuenta? <a href="register.html">Registrate aquí</a></small>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script>
+            // Aplicar preferencias guardadas (tema y color principal)
+            (function applySavedPrefs(){
+                try {
+                    const prefs = JSON.parse(localStorage.getItem('app_prefs')||'{}');
+                    function hexToHsl(hex){let c=hex.replace('#','');if(c.length===3)c=c.split('').map(ch=>ch+ch).join('');const r=parseInt(c.substring(0,2),16)/255,g=parseInt(c.substring(2,4),16)/255,b=parseInt(c.substring(4,6),16)/255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min){h=s=0;}else{const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;}h/=6;}return{h:h*360,s:s*100,l:l*100};}
+                    function hslToHex(h,s,l){h/=360;s/=100;l/=100;const hue2rgb=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};let r,g,b;if(s===0){r=g=b=l;}else{const q=l<0.5?l*(1+s):l+s-l*s;const p=2*l-q;r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b=hue2rgb(p,q,h-1/3);}const toHex=x=>('0'+Math.round(x*255).toString(16)).slice(-2);return '#'+toHex(r)+toHex(g)+toHex(b);}                    
+                    function desaturateHex(hex,sf=0.35,la=-12){const hsl=hexToHsl(hex);const s=Math.max(0,Math.min(100,hsl.s*sf));const l=Math.max(0,Math.min(100,hsl.l+la));return hslToHex(hsl.h,s,l);}                    
+                    const themePref = prefs.theme || 'light';
+                    const darkPref = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    const themeMode = themePref === 'system' ? (darkPref ? 'dark' : 'light') : themePref;
+                    let color = prefs.primaryColor || '#0d6efd';
+                    if (themeMode === 'dark') color = desaturateHex(color,0.35,-12);
+                    document.documentElement.setAttribute('data-bs-theme', themeMode);
+                    document.documentElement.style.setProperty('--bs-primary', color);
+                } catch {}
+            })();
+            // Configura la URL del backend FastAPI
+            const BASE_API = "http://127.0.0.1:8000";
+
+            const form = document.getElementById('login-form');
+            const alertBox = document.getElementById('alert');
+            const passwordInput = document.getElementById('password');
+
+            // Toggle mostrar/ocultar contraseña
+            function toggleLoginPassword() {
+                const type = passwordInput.type;
+                const btn = event.target.closest('.toggle-password');
+                
+                if (type === 'password') {
+                    passwordInput.type = 'text';
+                    // Cambiar a ojo abierto
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>`;
+                } else {
+                    passwordInput.type = 'password';
+                    // Cambiar a ojo cerrado
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>`;
+                }
+            }
+            const submitBtn = document.getElementById('submit-btn');
+            const spinner = submitBtn.querySelector('.spinner-border');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const demoBtn = document.getElementById('demo-btn');
+
+                    function setLoading(loading) {
+                submitBtn.disabled = loading;
+                spinner.classList.toggle('d-none', !loading);
+                        btnText.textContent = loading ? 'Verificando…' : 'Iniciar Sesión';
+            }
+
+            function showAlert(message, type) {
+                alertBox.textContent = message;
+                alertBox.className = `alert alert-${type}`;
+            }
+
+            async function checkBackendHealth() {
+                try {
+                    const controller = new AbortController();
+                    const to = setTimeout(()=>controller.abort(), 1500);
+                    const resp = await fetch(`${BASE_API}/health`, { signal: controller.signal });
+                    clearTimeout(to);
+                    if (!resp.ok) throw new Error();
+                    // Servidor OK
+                    demoBtn.classList.add('d-none');
+                } catch {
+                    // Servidor no disponible: ofrecer modo demo
+                    showAlert(`Servidor no disponible ahora mismo. Puedes intentar de nuevo o entrar en modo demo.`, 'warning');
+                    alertBox.classList.remove('d-none');
+                    demoBtn.classList.remove('d-none');
+                }
+            }
+
+            function loginDemo() {
+                // Marcar modo demo y continuar al dashboard
+                try { localStorage.setItem('demo_mode', '1'); } catch {}
+                sessionStorage.setItem('username', 'demo');
+                window.location.href = 'dashboard.html';
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                showAlert('', 'info');
+                alertBox.classList.add('d-none');
+                setLoading(true);
+
+                try {
+                    const formData = new FormData(form);
+                    // Añadimos timeout y manejamos errores con mensajes más claros
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    let resp;
+                    try {
+                        resp = await fetch(`${BASE_API}/api/login`, {
+                            method: 'POST',
+                            body: formData,
+                            signal: controller.signal,
+                        });
+                    } finally {
+                        clearTimeout(timeoutId);
+                    }
+
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok) {
+                        let friendly = '';
+                        if (resp.status === 404) {
+                            friendly = `No se encontró el endpoint (404): ${BASE_API}/api/login. Verifica que el servidor esté en ejecución y la URL BASE_API.`;
+                        } else if (resp.status >= 500) {
+                            friendly = `Error del servidor (${resp.status}). Revisa la consola del backend y vuelve a intentar.`;
+                        } else {
+                            friendly = data?.message || `Error ${resp.status}`;
+                        }
+                        throw new Error(friendly);
+                    }
+
+                    if (data?.authenticated) {
+                        showAlert('Inicio de sesión exitoso', 'success');
+                        alertBox.classList.remove('d-none');
+                        
+                        // Guardar usuario en sessionStorage
+                        sessionStorage.setItem('username', data.username);
+                        
+                        // Redirigir al dashboard después de 1 segundo
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';
+                        }, 1000);
+                    } else {
+                        showAlert(data?.message || 'Credenciales inválidas', 'danger');
+                        alertBox.classList.remove('d-none');
+                    }
+                } catch (err) {
+                    let msg = err?.message || 'Error al conectar con el servidor';
+                    const text = String(msg || '').toLowerCase();
+                    if (err?.name === 'AbortError') {
+                        msg = 'Tiempo de espera agotado (8s). El servidor no respondió. Verifica que el backend esté en ejecución.';
+                    } else if (err instanceof TypeError || text.includes('failed to fetch') || text.includes('networkerror')) {
+                        if (!navigator.onLine) {
+                            msg = 'Parece que no hay conexión a internet. Verifica tu red e intenta nuevamente.';
+                        } else {
+                            msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté corriendo (http://127.0.0.1:8000/health) y que ningún firewall/antivirus lo bloquee.`;
+                        }
+                    }
+                    showAlert(msg, 'danger');
+                    alertBox.classList.remove('d-none');
+                    // Ofrecer modo demo ante fallo de red
+                    demoBtn.classList.remove('d-none');
+                } finally {
+                    setLoading(false);
+                }
+            });
+
+            // Probar disponibilidad del backend al cargar
+            checkBackendHealth();
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    </body>
+</html>

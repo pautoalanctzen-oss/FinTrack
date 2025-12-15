@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Registro | Aplicación MI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+      <style>
+        .mdp-wrap{position:relative;display:inline-block;width:100%}
+        .mdp-panel{position:absolute;background:#fff;border:1px solid #dee2e6;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:1000;padding:12px;width:280px}
+        .mdp-year-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0}
+        .mdp-arrow{border:none;background:transparent;cursor:pointer;font-size:.9rem;padding:4px 8px;color:#6c757d;transition:color .2s}
+        .mdp-arrow:hover{color:#000}
+        .mdp-year{font-weight:600;font-size:.95rem;flex:1;text-align:center}
+        .mdp-month-row{margin-bottom:8px}
+        .mdp-month{width:100%;border:1px solid #ced4da;border-radius:4px;padding:6px;font-size:.85rem}
+        .mdp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e9ecef}
+        .mdp-weekday{text-align:center;padding:6px 4px;background:#f8f9fa;font-weight:600;color:#6c757d;font-size:.7rem;text-transform:uppercase}
+        .mdp-day{padding:6px;background:#fff;cursor:pointer;font-size:.8rem;transition:background .15s;display:flex;align-items:center;justify-content:center;min-height:32px}
+        .mdp-day:hover{background:#f8f9fa;border-color:#adb5bd}
+        .mdp-day.active{background:#0d6efd;color:#fff;border-color:#0d6efd;font-weight:600}
+        .mdp-container{display:none}
+        .mdp-container.open{display:block}
+      </style>
+    <style>
+      :root { --app-bg: #ffffff; }
+      [data-bs-theme="dark"] { --app-bg: #0f0f0f; }
+      body { min-height: 100vh; background: var(--app-bg); }
+      main.page-center { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 0; }
+      .card { width: 100%; max-width: 550px; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(2,6,23,.1); overflow: hidden; }
+      .card-header { background: #ffffff; color:#0f172a; border-bottom: 1px solid #e5e7eb; }
+      .brand { font-weight: 700; letter-spacing: .3px; font-size: 1.5rem; }
+      .validation-item { font-size: 0.875rem; margin: 0.25rem 0; }
+      .validation-item.valid { color: #198754; }
+      .validation-item.invalid { color: #dc3545; }
+      .password-valid-msg { color: #198754; font-weight: 600; font-size: 0.9rem; }
+      .confirm-error { color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem; }
+      .password-wrapper { position: relative; }
+      .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; color: #6c757d; padding: 0.25rem 0.5rem; }
+      .toggle-password svg { width: 20px; height: 20px; }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Aplicar preferencias guardadas (tema y color principal)
+      (function applySavedPrefs(){
+        try {
+          const prefs = JSON.parse(localStorage.getItem('app_prefs')||'{}');
+          function hexToHsl(hex){let c=hex.replace('#','');if(c.length===3)c=c.split('').map(ch=>ch+ch).join('');const r=parseInt(c.substring(0,2),16)/255,g=parseInt(c.substring(2,4),16)/255,b=parseInt(c.substring(4,6),16)/255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min){h=s=0;}else{const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;}h/=6;}return{h:h*360,s:s*100,l:l*100};}
+          function hslToHex(h,s,l){h/=360;s/=100;l/=100;const hue2rgb=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};let r,g,b;if(s===0){r=g=b=l;}else{const q=l<0.5?l*(1+s):l+s-l*s;const p=2*l-q;r=hue2rgb(p,q,h+1/3);g=hue2rgb(p,q,h);b=hue2rgb(p,q,h-1/3);}const toHex=x=>('0'+Math.round(x*255).toString(16)).slice(-2);return '#'+toHex(r)+toHex(g)+toHex(b);}          
+          function desaturateHex(hex,sf=0.35,la=-12){const hsl=hexToHsl(hex);const s=Math.max(0,Math.min(100,hsl.s*sf));const l=Math.max(0,Math.min(100,hsl.l+la));return hslToHex(hsl.h,s,l);}          
+          const themePref = prefs.theme || 'light';
+          const darkPref = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const themeMode = themePref === 'system' ? (darkPref ? 'dark' : 'light') : themePref;
+          let color = prefs.primaryColor || '#0d6efd';
+          if (themeMode === 'dark') color = desaturateHex(color,0.35,-12);
+          document.documentElement.setAttribute('data-bs-theme', themeMode);
+          document.documentElement.style.setProperty('--bs-primary', color);
+        } catch {}
+      })();
+    </script>
+    <main class="page-center container py-4">
+      <div class="card">
+        <div class="card-header text-center py-4">
+          <div class="brand text-primary">Registro</div>
+        </div>
+        <div class="card-body p-5">
+          <div id="alert" class="alert d-none" role="alert"></div>
+
+          <form id="register-form">
+            <!-- Correo -->
+            <div class="mb-3">
+              <label for="email" class="form-label">Correo</label>
+              <input type="email" class="form-control" id="email" name="email" autocomplete="email" required />
+            </div>
+
+            <!-- Usuario -->
+            <div class="mb-3">
+              <label for="username" class="form-label">Usuario</label>
+              <input type="text" class="form-control" id="username" name="username" autocomplete="username" required />
+            </div>
+
+            <!-- Fecha de nacimiento (selector moderno) -->
+            <div class="mb-3">
+              <label for="birthdate" class="form-label">Fecha de nacimiento</label>
+              <input type="text" class="form-control" id="birthdate" name="birthdate" data-datepicker="modern" required>
+            </div>
+
+            <!-- Contraseña con validación visual -->
+            <div class="mb-2">
+              <label for="password" class="form-label">Contraseña</label>
+              <div class="password-wrapper">
+                <input type="password" class="form-control" id="password" name="password" autocomplete="new-password" required />
+                <button type="button" class="toggle-password" id="toggle-password" title="Mostrar contraseña">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="password-validations" class="mb-3 d-none">
+              <div class="validation-item invalid" id="val-case">
+                <span class="icon">✗</span> Usa mayúsculas y minúsculas
+              </div>
+              <div class="validation-item invalid" id="val-number">
+                <span class="icon">✗</span> Usa números
+              </div>
+              <div class="validation-item invalid" id="val-length">
+                <span class="icon">✗</span> Más de 6 caracteres
+              </div>
+            </div>
+            <div id="password-valid-msg" class="password-valid-msg d-none mb-3">
+              ✓ Contraseña Válida
+            </div>
+
+            <!-- Confirmar contraseña -->
+            <div class="mb-2">
+              <label for="confirm_password" class="form-label">Confirmar contraseña</label>
+              <div class="password-wrapper">
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" autocomplete="new-password" required />
+                <button type="button" class="toggle-password" id="toggle-confirm" title="Mostrar contraseña">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="confirm-error" class="confirm-error d-none">
+              ✗ Contraseña Incorrecta
+            </div>
+
+            <div class="d-grid mt-4">
+              <button id="submit-btn" type="submit" class="btn btn-primary" disabled>
+                <span class="btn-text">Crear cuenta</span>
+                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              </button>
+            </div>
+          </form>
+
+          <div class="text-center mt-4">
+            <small class="text-muted">¿Ya tienes cuenta? <a href="index.html">Inicia Sesión</a></small>
+            <div class="mt-2">
+              <button id="demo-btn" type="button" class="btn btn-outline-secondary btn-sm d-none" onclick="loginDemo()">Entrar en modo demo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const BASE_API = "http://127.0.0.1:8000";
+      const form = document.getElementById('register-form');
+      const alertBox = document.getElementById('alert');
+      const submitBtn = document.getElementById('submit-btn');
+      const spinner = submitBtn.querySelector('.spinner-border');
+      const btnText = submitBtn.querySelector('.btn-text');
+
+      const birthdateInput = document.getElementById('birthdate');
+
+      // Normaliza la fecha a AAAA-MM-DD antes de enviarla al backend
+      const pad2 = (n) => (n < 10 ? '0' + n : '' + n);
+      function normalizeBirthdate(value) {
+        if (!value) return '';
+        const parts = value.split('-');
+        if (parts.length !== 3) return value;
+        // Ya viene en formato ISO
+        if (parts[0].length === 4) return value;
+        // Formato dd-mm-aaaa => aaaa-mm-dd
+        const [d, m, y] = parts;
+        return `${y}-${pad2(parseInt(m, 10))}-${pad2(parseInt(d, 10))}`;
+      }
+
+      const passwordInput = document.getElementById('password');
+      const confirmInput = document.getElementById('confirm_password');
+      const validationsDiv = document.getElementById('password-validations');
+      const validMsgDiv = document.getElementById('password-valid-msg');
+      const confirmErrorDiv = document.getElementById('confirm-error');
+
+      const valCase = document.getElementById('val-case');
+      const valNumber = document.getElementById('val-number');
+      const valLength = document.getElementById('val-length');
+
+      const togglePassword = document.getElementById('toggle-password');
+      const toggleConfirm = document.getElementById('toggle-confirm');
+
+      let passwordTouched = false;
+
+      birthdateInput.addEventListener('change', checkFormValidity);
+
+      // Estado de validaciones de contraseña
+      let validCase = false;
+      let validNumber = false;
+      let validLength = false;
+
+      function validatePassword() {
+        const pwd = passwordInput.value;
+        
+        // Mostrar validaciones solo si el usuario ha empezado a escribir
+        if (!passwordTouched && pwd.length > 0) {
+          passwordTouched = true;
+        }
+
+        // Mayúsculas y minúsculas
+        validCase = /[a-z]/.test(pwd) && /[A-Z]/.test(pwd);
+        valCase.className = validCase ? 'validation-item valid' : 'validation-item invalid';
+        valCase.querySelector('.icon').textContent = validCase ? '✓' : '✗';
+
+        // Números
+        validNumber = /\d/.test(pwd);
+        valNumber.className = validNumber ? 'validation-item valid' : 'validation-item invalid';
+        valNumber.querySelector('.icon').textContent = validNumber ? '✓' : '✗';
+
+        // Más de 6 caracteres
+        validLength = pwd.length > 6;
+        valLength.className = validLength ? 'validation-item valid' : 'validation-item invalid';
+        valLength.querySelector('.icon').textContent = validLength ? '✓' : '✗';
+
+        // Si todas válidas, ocultar validaciones y mostrar "Contraseña Válida"
+        const allValid = validCase && validNumber && validLength;
+        if (passwordTouched && pwd.length > 0) {
+          if (allValid) {
+            validationsDiv.classList.add('d-none');
+            validMsgDiv.classList.remove('d-none');
+          } else {
+            validationsDiv.classList.remove('d-none');
+            validMsgDiv.classList.add('d-none');
+          }
+        }
+
+        checkFormValidity();
+      }
+
+      function validateConfirm() {
+        const pwd = passwordInput.value;
+        const conf = confirmInput.value;
+        if (conf.length > 0 && pwd !== conf) {
+          confirmErrorDiv.classList.remove('d-none');
+        } else {
+          confirmErrorDiv.classList.add('d-none');
+        }
+        checkFormValidity();
+      }
+
+      function checkFormValidity() {
+        const allPasswordValid = validCase && validNumber && validLength;
+        const passwordsMatch = passwordInput.value === confirmInput.value && confirmInput.value.length > 0;
+        const birthdateValid = birthdateInput.value !== '';
+        const emailValid = document.getElementById('email').value.trim() !== '';
+        const usernameValid = document.getElementById('username').value.trim() !== '';
+
+        if (allPasswordValid && passwordsMatch && birthdateValid && emailValid && usernameValid) {
+          submitBtn.disabled = false;
+        } else {
+          submitBtn.disabled = true;
+        }
+      }
+
+      passwordInput.addEventListener('input', validatePassword);
+      confirmInput.addEventListener('input', validateConfirm);
+      document.getElementById('email').addEventListener('input', checkFormValidity);
+      document.getElementById('username').addEventListener('input', checkFormValidity);
+
+      // Toggle mostrar/ocultar contraseña
+      togglePassword.addEventListener('click', () => {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        togglePassword.title = type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña';
+        
+        // Cambiar icono: ojo cerrado (oculta) vs ojo abierto (visible)
+        if (type === 'password') {
+          togglePassword.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+          </svg>`;
+        } else {
+          togglePassword.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>`;
+        }
+      });
+
+      toggleConfirm.addEventListener('click', () => {
+        const type = confirmInput.type === 'password' ? 'text' : 'password';
+        confirmInput.type = type;
+        toggleConfirm.title = type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña';
+        
+        if (type === 'password') {
+          toggleConfirm.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+          </svg>`;
+        } else {
+          toggleConfirm.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>`;
+        }
+      });
+
+      function setLoading(loading) {
+        submitBtn.disabled = loading;
+        spinner.classList.toggle('d-none', !loading);
+        btnText.textContent = loading ? 'Registrando…' : 'Crear cuenta';
+      }
+
+      function showAlert(message, type) {
+        alertBox.textContent = message;
+        alertBox.className = `alert alert-${type}`;
+      }
+      const demoBtn = document.getElementById('demo-btn');
+      async function checkBackendHealth() {
+        try {
+          const controller = new AbortController();
+          const to = setTimeout(()=>controller.abort(), 1500);
+          const resp = await fetch(`${BASE_API}/health`, { signal: controller.signal });
+          clearTimeout(to);
+          if (!resp.ok) throw new Error();
+          demoBtn.classList.add('d-none');
+        } catch {
+          showAlert(`Servidor no disponible ahora mismo. Puedes intentar más tarde o entrar en modo demo.`, 'warning');
+          alertBox.classList.remove('d-none');
+          demoBtn.classList.remove('d-none');
+        }
+      }
+      function loginDemo() {
+        try { localStorage.setItem('demo_mode', '1'); } catch {}
+        sessionStorage.setItem('username', 'demo');
+        window.location.href = 'dashboard.html';
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAlert('', 'info');
+        alertBox.classList.add('d-none');
+        setLoading(true);
+        try {
+          // Ajustar la fecha al formato esperado por el backend (AAAA-MM-DD)
+          const isoBirthdate = normalizeBirthdate(birthdateInput.value.trim());
+          birthdateInput.value = isoBirthdate;
+
+          const formData = new FormData(form);
+          formData.set('birthdate', isoBirthdate);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          let resp;
+          try {
+            resp = await fetch(`${BASE_API}/api/register`, {
+              method: 'POST',
+              body: formData,
+              signal: controller.signal,
+            });
+          } finally {
+            clearTimeout(timeoutId);
+          }
+
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            let friendly = '';
+            if (resp.status === 404) {
+              friendly = `No se encontró el endpoint (404): ${BASE_API}/api/register. Verifica servidor y BASE_API.`;
+            } else if (resp.status >= 500) {
+              friendly = `Error del servidor (${resp.status}). Revisa la consola del backend.`;
+            } else {
+              friendly = data?.message || `Error ${resp.status}`;
+            }
+            throw new Error(friendly);
+          }
+          showAlert(data?.message || 'Registro exitoso', 'success');
+          alertBox.classList.remove('d-none');
+          
+          // Redirigir a la página de login después de 1.5 segundos
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+        } catch (err) {
+          let msg = err?.message || 'Error al conectar con el servidor';
+          const text = String(msg||'').toLowerCase();
+          if (err?.name === 'AbortError') {
+            msg = 'Tiempo de espera agotado (8s). El servidor no respondió. Verifica que el backend esté en ejecución.';
+          } else if (err instanceof TypeError || text.includes('failed to fetch') || text.includes('networkerror')) {
+            if (!navigator.onLine) {
+              msg = 'Parece que no hay conexión a internet. Verifica tu red.';
+            } else {
+              msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté corriendo (http://127.0.0.1:8000/health) y que ningún firewall/antivirus lo bloquee.`;
+            }
+          }
+          showAlert(msg, 'danger');
+          alertBox.classList.remove('d-none');
+          demoBtn.classList.remove('d-none');
+        } finally {
+          setLoading(false);
+        }
+      });
+      // Probar servidor al cargar
+      checkBackendHealth();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+    (function(){
+      function pad(n){return n<10?"0"+n:""+n}
+      function build(container,input){
+        container.classList.add("mdp-container");
+        const panel = document.createElement('div');
+        panel.className = 'mdp-panel';
+        const yearRow = document.createElement('div');
+        yearRow.className = 'mdp-year-row';
+        const prev = document.createElement('button');
+        prev.type = 'button'; prev.className = 'mdp-arrow'; prev.textContent = '◀';
+        const next = document.createElement('button');
+        next.type = 'button'; next.className = 'mdp-arrow'; next.textContent = '▶';
+        const yearLabel = document.createElement('span'); yearLabel.className='mdp-year';
+        yearRow.appendChild(prev); yearRow.appendChild(yearLabel); yearRow.appendChild(next);
+        const monthRow = document.createElement('div');
+        monthRow.className = 'mdp-month-row';
+        const monthSelect = document.createElement('select');
+        monthSelect.className = 'mdp-month';
+        const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        months.forEach((m,i)=>{const o=document.createElement('option'); o.value=i+1; o.textContent=m; monthSelect.appendChild(o);});
+        monthRow.appendChild(monthSelect);
+        const daysGrid = document.createElement('div');
+        daysGrid.className='mdp-days';
+        panel.appendChild(yearRow);
+        panel.appendChild(monthRow);
+        panel.appendChild(daysGrid);
+        container.appendChild(panel);
+        let date = new Date();
+        function syncFromInput(){
+          const v = input.value;
+          if(v){
+            const parts = v.split('-');
+            let y, m, d;
+            if(parts[0].length===4){
+              y = parseInt(parts[0]); m = parseInt(parts[1]); d = parts[2]?parseInt(parts[2]):1;
+            }else{
+              d = parseInt(parts[0]); m = parseInt(parts[1]); y = parts[2]?parseInt(parts[2]):date.getFullYear();
+            }
+            if(!isNaN(y)&&!isNaN(m)&&!isNaN(d)) date = new Date(y,m-1,d);
+          }
+        }
+        function render(){
+          yearLabel.textContent = date.getFullYear();
+          monthSelect.value = (date.getMonth()+1);
+          daysGrid.innerHTML = '';
+          const y = date.getFullYear();
+          const m = date.getMonth();
+          const first = new Date(y,m,1);
+          const last = new Date(y,m+1,0);
+          const startWeekday = first.getDay();
+          const wl = ['D','L','M','X','J','V','S'];
+          wl.forEach(w=>{const el=document.createElement('div'); el.className='mdp-weekday'; el.textContent=w; daysGrid.appendChild(el);});
+          for(let d=1; d<= last.getDate(); d++){
+            const btn = document.createElement('button'); btn.type='button'; btn.className='mdp-day'; btn.textContent = d;
+            if(d===1) btn.style.gridColumnStart = startWeekday+1;
+            if(d === date.getDate()) btn.classList.add('active');
+            btn.addEventListener('click',()=>{
+              date = new Date(y,m,d);
+              input.value = pad(d)+'-'+pad(m+1)+'-'+y;
+              input.dispatchEvent(new Event('change'));
+              hide();
+            });
+            daysGrid.appendChild(btn);
+          }
+        }
+        function show(){ container.classList.add('open'); }
+        function hide(){ container.classList.remove('open'); }
+        prev.addEventListener('click',()=>{ date = new Date(date.getFullYear()-1, date.getMonth(), date.getDate()); render(); });
+        next.addEventListener('click',()=>{ date = new Date(date.getFullYear()+1, date.getMonth(), date.getDate()); render(); });
+        monthSelect.addEventListener('change',()=>{ const m = parseInt(monthSelect.value)-1; date = new Date(date.getFullYear(), m, 1); render(); });
+        document.addEventListener('click', (e)=>{ if(!container.contains(e.target) && e.target!==input) hide(); });
+        try { input.readOnly = true; } catch {}
+        input.addEventListener('mousedown', (e)=>{ e.preventDefault(); syncFromInput(); render(); position(); show(); });
+        input.addEventListener('focus', (e)=>{ if(e.preventDefault) e.preventDefault(); syncFromInput(); render(); position(); show(); });
+        input.addEventListener('click', (e)=>{ if(e.preventDefault) e.preventDefault(); syncFromInput(); render(); position(); show(); });
+        function position(){
+          panel.style.position = 'absolute';
+          panel.style.top = (input.offsetTop + input.offsetHeight + 4) + 'px';
+          panel.style.left = (input.offsetLeft) + 'px';
+          panel.style.minWidth = Math.max(280, input.offsetWidth) + 'px';
+        }
+      }
+      function init(){
+        const inputs = document.querySelectorAll('input[data-datepicker="modern"]');
+        inputs.forEach(input=>{
+          const wrap = document.createElement('div');
+          wrap.className='mdp-wrap';
+          input.parentNode.insertBefore(wrap, input);
+          wrap.appendChild(input);
+          try { input.type = 'text'; } catch {}
+          const ico = document.createElement('span');
+          ico.setAttribute('aria-hidden','true');
+          ico.style.position='absolute';
+          ico.style.right='10px';
+          ico.style.top='50%';
+          ico.style.transform='translateY(-50%)';
+          ico.style.color='#6c757d';
+          ico.style.pointerEvents='none';
+          ico.innerHTML='📅';
+          wrap.style.position='relative';
+          wrap.appendChild(ico);
+          build(wrap,input);
+        });
+      }
+      if(document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+    </script>
+  </body>
+</html>
