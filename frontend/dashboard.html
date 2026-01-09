@@ -3753,7 +3753,7 @@
             recalcRegistroTotals();
         }
 
-        function saveRegistro() {
+        async function saveRegistro() {
             // Detectar modo basado en el select de obra (incluye opción especial __ADICIONAL__)
             const fecha = document.getElementById('registro-fecha')?.value || '';
             const obraVal = document.getElementById('registro-obra')?.value || '';
@@ -3831,9 +3831,26 @@
                 titulo: `Registro ${obra}${fecha ? ' - ' + fecha : ''}`,
                 resumen: `${totalCantidad} uds • A cobrar: ${totalCobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})} • Pagado: ${totalPagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}`
             };
-            const idx = registros.findIndex(r => r.id === rec.id);
-            if (idx >= 0) registros[idx] = rec; else registros.push(rec);
-            localStorage.setItem('registros', JSON.stringify(registros));
+            
+            // Guardar en backend
+            try {
+                if (currentEditRegistroId) {
+                    // Actualizar registro existente
+                    await API.updateRegistro(currentEditRegistroId, rec);
+                } else {
+                    // Crear nuevo registro
+                    const result = await API.createRegistro(rec);
+                    rec.id = result.id; // Usar el ID del backend
+                }
+                
+                // Actualizar array local
+                const idx = registros.findIndex(r => r.id === rec.id);
+                if (idx >= 0) registros[idx] = rec; else registros.push(rec);
+            } catch (error) {
+                console.error('Error al guardar registro:', error);
+                showRegistroAddAlert('Error al guardar el registro en el servidor: ' + error.message, 'danger');
+                return;
+            }
             showRegistroAddAlert('Registro guardado correctamente.', 'success');
             // Navegar a resumen
             setTimeout(() => {
@@ -3867,11 +3884,20 @@
         }
 
         // Eliminar un registro
-        function deleteRegistro(id) {
+        async function deleteRegistro(id) {
             if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
-            registros = registros.filter(r => r.id !== id);
-            localStorage.setItem('registros', JSON.stringify(registros));
-            loadRegistrosResumen();
+            
+            try {
+                // Eliminar del backend
+                await API.deleteRegistro(id);
+                
+                // Actualizar array local
+                registros = registros.filter(r => r.id !== id);
+                loadRegistrosResumen();
+            } catch (error) {
+                console.error('Error al eliminar registro:', error);
+                alert('Error al eliminar el registro del servidor: ' + error.message);
+            }
         }
 
         // Ver detalle de un registro en modo readonly

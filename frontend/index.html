@@ -157,11 +157,23 @@
 
                 try {
                     const formData = new FormData(form);
+                    const username = formData.get('username');
+                    const password = formData.get('password');
+                    
+                    console.log('========== INICIO LOGIN ==========');
+                    console.log('Intentando login con:', username);
+                    console.log('BASE_API:', BASE_API);
+                    console.log('Longitud de contraseña:', password?.length);
+                    
                     // Añadimos timeout y manejamos errores con mensajes más claros
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    const timeoutId = setTimeout(() => {
+                        console.log('⏱️ Timeout de 15s alcanzado');
+                        controller.abort();
+                    }, 15000); // Aumentar a 15s
                     let resp;
                     try {
+                        console.log('Enviando petición a:', `${BASE_API}/api/login`);
                         resp = await fetch(`${BASE_API}/api/login`, {
                             method: 'POST',
                             body: formData,
@@ -171,7 +183,17 @@
                         clearTimeout(timeoutId);
                     }
 
-                    const data = await resp.json().catch(() => ({}));
+                    console.log('Status de respuesta:', resp.status);
+                    const data = await resp.json().catch((e) => {
+                        console.error('Error al parsear JSON:', e);
+                        return {};
+                    });
+                    console.log('Datos recibidos:', JSON.stringify(data, null, 2));
+                    console.log('Tipo de authenticated:', typeof data?.authenticated);
+                    console.log('Valor de authenticated:', data?.authenticated);
+                    console.log('¿authenticated === true?:', data?.authenticated === true);
+                    console.log('¿authenticated === "true"?:', data?.authenticated === "true");
+                    
                     if (!resp.ok) {
                         let friendly = '';
                         if (resp.status === 404) {
@@ -179,44 +201,58 @@
                         } else if (resp.status >= 500) {
                             friendly = `Error del servidor (${resp.status}). Revisa la consola del backend y vuelve a intentar.`;
                         } else {
-                            friendly = data?.message || `Error ${resp.status}`;
+                            friendly = data?.message || data?.detail?.message || `Error ${resp.status}`;
                         }
                         throw new Error(friendly);
                     }
 
-                    if (data?.authenticated) {
+                    // Verificar si la respuesta indica autenticación exitosa (permite true o "true")
+                    const isAuthenticated = data?.authenticated === true || data?.authenticated === "true";
+                    if (isAuthenticated) {
                         showAlert('Inicio de sesión exitoso', 'success');
                         alertBox.classList.remove('d-none');
+                        console.log('✓ Autenticación exitosa');
                         
                         // Guardar usuario en sessionStorage
                         sessionStorage.setItem('username', data.username);
+                        console.log('Usuario guardado en sessionStorage:', data.username);
                         
                         // Redirigir al dashboard después de 1 segundo
                         setTimeout(() => {
+                            console.log('Redirigiendo a dashboard.html');
                             window.location.href = 'dashboard.html';
                         }, 1000);
                     } else {
-                        showAlert(data?.message || 'Credenciales inválidas', 'danger');
+                        const msg = data?.message || 'Credenciales inválidas';
+                        console.error('❌ Login fallido:', msg);
+                        console.error('Objeto data completo:', JSON.stringify(data, null, 2));
+                        console.log('========== FIN INTENTO FALLIDO ==========');
+                        showAlert(msg, 'danger');
                         alertBox.classList.remove('d-none');
                     }
                 } catch (err) {
+                    console.error('🔴 Error completo:', err);
+                    console.error('Stack:', err?.stack);
                     let msg = err?.message || 'Error al conectar con el servidor';
                     const text = String(msg || '').toLowerCase();
                     if (err?.name === 'AbortError') {
-                        msg = 'Tiempo de espera agotado (8s). El servidor no respondió. Verifica que el backend esté en ejecución.';
+                        msg = 'Tiempo de espera agotado (15s). El servidor no respondió. Verifica que el backend esté en ejecución.';
                     } else if (err instanceof TypeError || text.includes('failed to fetch') || text.includes('networkerror')) {
                         if (!navigator.onLine) {
                             msg = 'Parece que no hay conexión a internet. Verifica tu red e intenta nuevamente.';
                         } else {
-                            msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté activo (https://aplicaci-n-mi.onrender.com/health) y que ningún firewall/antivirus lo bloquee.`;
+                            msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté activo.`;
                         }
                     }
+                    console.error('Mensaje final:', msg);
+                    console.log('========== ERROR DURANTE LOGIN ==========');
                     showAlert(msg, 'danger');
                     alertBox.classList.remove('d-none');
                     // Ofrecer modo demo ante fallo de red
                     demoBtn.classList.remove('d-none');
                 } finally {
                     setLoading(false);
+                    console.log('========== FIN LOGIN ==========');
                 }
             });
 
