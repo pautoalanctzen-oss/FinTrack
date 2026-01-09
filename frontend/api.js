@@ -6,7 +6,7 @@
 const API = {
     baseURL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? "http://127.0.0.1:8000"
-        : "https://aplicaci-n-mi.onrender.com",
+        : "https://fintrack-backend.onrender.com",
     
     // Obtener username actual
     getUsername() {

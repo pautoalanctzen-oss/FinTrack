@@ -179,7 +179,9 @@
     </main>
 
     <script>
-      const BASE_API = "https://aplicaci-n-mi.onrender.com";
+      const BASE_API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+          ? "http://127.0.0.1:8000"
+          : "https://fintrack-backend.onrender.com";
       const form = document.getElementById('register-form');
       const alertBox = document.getElementById('alert');
       const submitBtn = document.getElementById('submit-btn');
