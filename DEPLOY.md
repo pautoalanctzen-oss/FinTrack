@@ -1,4 +1,4 @@
-# 🚀 Guía de Despliegue - Aplicación MI
+# 🚀 Guía de Despliegue - FinTrack
 
 ## 📋 Requisitos previos
 - Cuenta de GitHub (gratis)

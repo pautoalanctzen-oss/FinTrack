@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exportar Datos de LocalStorage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Recuperar Datos de LocalStorage</h1>
+    <p>Esta página extrae los datos que tenías guardados en el navegador.</p>
+
+    <div class="section">
+        <h3>Estado de los datos:</h3>
+        <div id="status"></div>
+    </div>
+
+    <div class="section">
+        <h3>Clientes:</h3>
+        <textarea id="clientes-data" readonly></textarea>
+        <button onclick="copiar('clientes-data')">📋 Copiar Clientes</button>
+        <button onclick="descargar('clientes', 'clientes-data')">💾 Descargar JSON</button>
+    </div>
+
+    <div class="section">
+        <h3>Obras:</h3>
+        <textarea id="obras-data" readonly></textarea>
+        <button onclick="copiar('obras-data')">📋 Copiar Obras</button>
+        <button onclick="descargar('obras', 'obras-data')">💾 Descargar JSON</button>
+    </div>
+
+    <div class="section">
+        <h3>Productos:</h3>
+        <textarea id="productos-data" readonly></textarea>
+        <button onclick="copiar('productos-data')">📋 Copiar Productos</button>
+        <button onclick="descargar('productos', 'productos-data')">💾 Descargar JSON</button>
+    </div>
+
+    <div class="section">
+        <h3>Registros:</h3>
+        <textarea id="registros-data" readonly></textarea>
+        <button onclick="copiar('registros-data')">📋 Copiar Registros</button>
+        <button onclick="descargar('registros', 'registros-data')">💾 Descargar JSON</button>
+    </div>
+
+    <div class="section">
+        <button onclick="exportarTodo()" style="background: #28a745; font-size: 16px;">
+            📦 DESCARGAR TODO EN UN ARCHIVO
+        </button>
+    </div>
+
+    <script>
+        // Extraer datos de localStorage
+        function cargarDatos() {
+            const status = document.getElementById('status');
+            let mensaje = '';
+            let hayDatos = false;
+
+            const keys = ['clientes', 'obras', 'productos', 'registros'];
+            
+            keys.forEach(key => {
+                const data = localStorage.getItem(key);
+                const textarea = document.getElementById(key + '-data');
+                
+                if (data) {
+                    textarea.value = data;
+                    const items = JSON.parse(data);
+                    mensaje += `✅ ${key}: ${items.length} elementos encontrados<br>`;
+                    hayDatos = true;
+                } else {
+                    textarea.value = '[]';
+                    mensaje += `❌ ${key}: No hay datos<br>`;
+                }
+            });
+
+            if (hayDatos) {
+                status.innerHTML = `<div class="success">${mensaje}</div>`;
+            } else {
+                status.innerHTML = `<div class="error">${mensaje}<br><br>⚠️ No se encontraron datos. Asegúrate de abrir este archivo desde la misma ubicación donde usabas el dashboard anteriormente.</div>`;
+            }
+        }
+
+        function copiar(textareaId) {
+            const textarea = document.getElementById(textareaId);
+            textarea.select();
+            document.execCommand('copy');
+            alert('✅ Datos copiados al portapapeles');
+        }
+
+        function descargar(nombre, textareaId) {
+            const textarea = document.getElementById(textareaId);
+            const blob = new Blob([textarea.value], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${nombre}_backup.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarTodo() {
+            const data = {
+                clientes: JSON.parse(localStorage.getItem('clientes') || '[]'),
+                obras: JSON.parse(localStorage.getItem('obras') || '[]'),
+                productos: JSON.parse(localStorage.getItem('productos') || '[]'),
+                registros: JSON.parse(localStorage.getItem('registros') || '[]'),
+                fecha_exportacion: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `panchitas_catering_backup_completo.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('✅ Archivo completo descargado: panchitas_catering_backup_completo.json');
+        }
+
+        // Cargar al iniciar
+        window.onload = cargarDatos;
+    </script>
+</body>
+</html>

@@ -1,15 +1,88 @@
-# Sistema de Login y Registro - Aplicación Web
+# 🚀 Sistema de Login y Registro - Alta Disponibilidad
 
 ## Descripción
 Aplicación web completa con sistema de autenticación usando FastAPI (backend) y HTML/JavaScript (frontend).
 
+**🛡️ NUEVO: Sistema robusto con supervisión automática y recuperación ante fallos**
+**🆕 API REST completa para gestión de clientes, obras, productos y registros**
+
+## ⚡ Inicio Rápido (RECOMENDADO)
+
+**La forma más fácil y segura:**
+
+```cmd
+start_server.bat
+```
+
+✅ Supervisión automática | ✅ Reinicio automático | ✅ Logging completo | ✅ Hot-reload
+
+---
+
 ## Características
+
+### Sistema de Autenticación
 - ✅ Registro de usuarios con validación robusta
 - ✅ Login con autenticación segura
 - ✅ Contraseñas hasheadas con bcrypt
-- ✅ Base de datos SQLite
+- ✅ Gestión de perfil de usuario
 - ✅ Validación en tiempo real en el frontend
+
+### Gestión de Datos (NUEVO)
+- ✅ **CRUD completo de Clientes**: Crea, consulta, actualiza y elimina clientes
+- ✅ **CRUD completo de Obras**: Gestiona proyectos y obras
+- ✅ **CRUD completo de Productos**: Catálogo de productos con precios
+- ✅ **CRUD completo de Registros**: Registros de ventas/cobros con detalles
+- ✅ **Reportes y Estadísticas**: Análisis por obra, fecha, totales agregados
+- ✅ **Filtros avanzados**: Por obra, rango de fechas, estado
+
+### Infraestructura
+- ✅ Base de datos SQLite con relaciones
+- ✅ Aislamiento de datos por usuario
 - ✅ Diseño moderno y responsivo con Bootstrap 5
+- 🆕 **Supervisión automática del servidor**
+- 🆕 **Reinicio automático en caso de fallos**
+- 🆕 **Sistema de logging completo**
+- 🆕 **Health checks y monitoring**
+- 🆕 **Middleware de error handling global**
+- 🆕 **Retry logic en conexiones DB**
+
+## API REST
+
+### Endpoints Disponibles
+
+#### Autenticación
+- `POST /api/login` - Iniciar sesión
+- `POST /api/register` - Registrar nuevo usuario
+- `GET /api/user` - Obtener datos del usuario
+
+#### Clientes
+- `GET /api/clientes` - Listar clientes
+- `POST /api/clientes` - Crear cliente
+- `PUT /api/clientes/{id}` - Actualizar cliente
+- `DELETE /api/clientes/{id}` - Eliminar cliente
+
+#### Obras
+- `GET /api/obras` - Listar obras
+- `POST /api/obras` - Crear obra
+- `PUT /api/obras/{id}` - Actualizar obra
+- `DELETE /api/obras/{id}` - Eliminar obra
+
+#### Productos
+- `GET /api/productos` - Listar productos
+- `POST /api/productos` - Crear producto
+- `PUT /api/productos/{id}` - Actualizar producto
+- `DELETE /api/productos/{id}` - Eliminar producto
+
+#### Registros
+- `GET /api/registros` - Listar registros (con filtros)
+- `POST /api/registros` - Crear registro
+- `PUT /api/registros/{id}` - Actualizar registro
+- `DELETE /api/registros/{id}` - Eliminar registro
+
+#### Reportes
+- `GET /api/reportes` - Generar estadísticas y reportes
+
+📖 **Documentación completa**: Ver [API_ENDPOINTS.md](API_ENDPOINTS.md)
 
 ## Requisitos
 - Python 3.8 o superior
@@ -32,17 +105,32 @@ Las dependencias incluyen:
 
 ### 2. Iniciar el servidor backend
 
-```powershell
-python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+**🌟 OPCIÓN RECOMENDADA - Con Supervisión Automática:**
+
+```cmd
+start_server.bat          # Desarrollo (con hot-reload)
+start_server_production.bat   # Producción
 ```
 
-O si estás usando el entorno virtual:
+**Ventajas:**
+- Reinicio automático si el servidor se cae
+- Logging completo en `backend.log`
+- Protección contra loops infinitos
+- Mejor manejo de errores
+
+**Opción Manual (tradicional):**
 
 ```powershell
-& ".\.venv\Scripts\python.exe" -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 El servidor estará disponible en: http://127.0.0.1:8000
+
+**Health Check:**
+```
+GET http://127.0.0.1:8000/health
+GET http://127.0.0.1:8000/api/status
+```
 
 ### 3. Abrir el frontend
 
@@ -119,9 +207,77 @@ http://127.0.0.1:8000/health
 
 Debe responder con:
 
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "version": "1.0.0"
+}
 ```
-{ "status": "ok" }
+
+### Ver los logs
+
+```powershell
+# En tiempo real
+Get-Content backend.log -Wait
+
+# Últimas 50 líneas
+Get-Content backend.log -Tail 50
 ```
+
+### Probar la API
+
+**Script de prueba automático**:
+```cmd
+python test_api.py
+```
+
+**Prueba manual**:
+```bash
+# Login
+curl -X POST http://127.0.0.1:8000/api/login -d "username=demo&password=Demo1234"
+
+# Obtener clientes
+curl "http://127.0.0.1:8000/api/clientes?username=demo"
+```
+
+---
+
+## 📚 Documentación Adicional
+
+- **[API_ENDPOINTS.md](API_ENDPOINTS.md)** - Documentación completa de todos los endpoints de la API
+- **[PUNTOS_COMPLETADOS.md](PUNTOS_COMPLETADOS.md)** - Lista de funcionalidades completadas
+- **[SISTEMA_ALTA_DISPONIBILIDAD.md](SISTEMA_ALTA_DISPONIBILIDAD.md)** - Guía del sistema de supervisión
+- **[RESUMEN_MEJORAS.md](RESUMEN_MEJORAS.md)** - Historial de mejoras implementadas
+
+---
+
+## 🗄️ Estructura de la Base de Datos
+
+El sistema utiliza SQLite con las siguientes tablas:
+
+- **users** - Usuarios del sistema (autenticación)
+- **clientes** - Información de clientes
+- **obras** - Proyectos/obras gestionados
+- **productos** - Catálogo de productos con precios
+- **registros** - Registros de ventas/cobros con detalles
+
+Todas las tablas tienen relación con `users` para aislar los datos por usuario.
+
+---
+
+## 🎉 ¡Listo para Usar!
+
+El sistema está completamente funcional con:
+- ✅ Backend completo con API REST
+- ✅ Frontend con interfaz moderna
+- ✅ Base de datos con persistencia
+- ✅ Documentación completa
+- ✅ Pruebas automatizadas
+- ✅ Sistema de supervisión y logging
+
+**Versión**: 2.0.0  
+**Última actualización**: 6 de Enero de 2026
 
 ### Error: "ModuleNotFoundError: No module named 'bcrypt'"
 **Solución**: Instala bcrypt

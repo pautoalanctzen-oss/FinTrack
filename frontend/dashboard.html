@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dashboard | Aplicación MI</title>
+    <title>Dashboard | FinTrack</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Chart.js -->
@@ -312,7 +312,7 @@
             <div id="inicio-content" class="welcome-card">
                 <div class="mb-4 text-center">
                     <div class="text-muted small mb-1" style="letter-spacing:.5px;">Bienvenidos a</div>
-                    <h1 class="fw-bold display-6 mb-3" style="line-height:1.1;">Nombre de la Aplicación</h1>
+                    <h1 class="fw-bold display-6 mb-3" style="line-height:1.1;">FinTrack</h1>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -1524,7 +1524,9 @@
 
     <script>
         // API base y estado
-        const BASE_API = "https://aplicaci-n-mi.onrender.com";
+        const BASE_API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? "http://127.0.0.1:8000"
+            : "https://aplicaci-n-mi.onrender.com";
         let settingsInitialized = false;
 
         // ---- Utilidades globales faltantes ----
@@ -1724,7 +1726,7 @@
         }
 
         // Agregar evento al botón Manual
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             const manualBtn = document.getElementById('manualBtn');
             if (manualBtn) {
                 manualBtn.addEventListener('click', function() {
@@ -1735,6 +1737,9 @@
                     }
                 });
             }
+            
+            // Cargar datos del backend al iniciar
+            await loadAllDataFromBackend();
         });
 
         // Inicio vacío: stub conservando getRegistros para otras funciones que lo usan
@@ -2576,70 +2581,49 @@
 
         // ===== GESTIÓN DE CLIENTES Y OBRAS =====
         
-        // Almacenamiento local (en producción esto vendría del backend)
-    let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
-    let obras = JSON.parse(localStorage.getItem('obras')) || [];
-    let registros = JSON.parse(localStorage.getItem('registros')) || [];
-    let productos = JSON.parse(localStorage.getItem('productos')) || [];
+        // Datos cargados desde el backend
+    let clientes = [];
+    let obras = [];
+    let registros = [];
+    let productos = [];
 
-    // Si no hay datos, generar dataset mínimo local para que las vistas muestren algo (útil en file:// o demo)
-    (function seedIfEmpty(){
-        const today = new Date();
-        const iso = (d) => d.toISOString().split('T')[0];
-        if (!productos.length) {
-            productos = [
-                { id: 1, nombre: 'Producto A', precio: 25 },
-                { id: 2, nombre: 'Producto B', precio: 40 }
-            ];
-            try { localStorage.setItem('productos', JSON.stringify(productos)); } catch {}
+    // Cargar todos los datos desde el backend
+    async function loadAllDataFromBackend() {
+        const username = sessionStorage.getItem('username');
+        if (!username || username === 'demo') {
+            // Modo demo: usar localStorage
+            clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+            obras = JSON.parse(localStorage.getItem('obras')) || [];
+            registros = JSON.parse(localStorage.getItem('registros')) || [];
+            productos = JSON.parse(localStorage.getItem('productos')) || [];
+            console.log('Modo demo activado - usando localStorage');
+            return;
         }
-        if (!obras.length) {
-            obras = [ { id: 1, nombre: 'Obra Central', ubicacion: 'Ciudad', estado: 'activa' } ];
-            try { localStorage.setItem('obras', JSON.stringify(obras)); } catch {}
+
+        try {
+            // Cargar datos reales desde el backend
+            console.log('Cargando datos desde el backend para:', username);
+            
+            const [clientesData, obrasData, productosData, registrosData] = await Promise.all([
+                API.getClientes(),
+                API.getObras(),
+                API.getProductos(),
+                API.getRegistros()
+            ]);
+
+            clientes = clientesData || [];
+            obras = obrasData || [];
+            productos = productosData || [];
+            registros = registrosData || [];
+
+            console.log(`✓ Datos cargados: ${clientes.length} clientes, ${obras.length} obras, ${productos.length} productos, ${registros.length} registros`);
+        } catch (error) {
+            console.error('Error al cargar datos:', error);
+            alert('Error al cargar datos del servidor. Por favor, recarga la página.');
+            throw error;
         }
-        if (!clientes.length) {
-            clientes = [
-                { id: 1, nombre: 'Cliente Uno', cedula: '0101', obra: 'Obra Central', estado: 'activo', fecha: iso(new Date(today)) },
-                { id: 2, nombre: 'Cliente Dos', cedula: '0202', obra: 'Obra Central', estado: 'activo', fecha: iso(new Date(today)) }
-            ];
-            try { localStorage.setItem('clientes', JSON.stringify(clientes)); } catch {}
-        }
-        if (!registros.length) {
-            const d0 = new Date(today); d0.setDate(today.getDate()-7);
-            const d1 = new Date(today); d1.setDate(today.getDate()-3);
-            const d2 = new Date(today);
-            registros = [
-                {
-                    id: 1,
-                    fecha: iso(d0),
-                    obra: 'Obra Central',
-                    totalCantidad: 5,
-                    totalCobrar: 5*25,
-                    totalPagado: 5*25,
-                    status: 'pagado'
-                },
-                {
-                    id: 2,
-                    fecha: iso(d1),
-                    obra: 'Obra Central',
-                    totalCantidad: 3,
-                    totalCobrar: 3*40,
-                    totalPagado: 2*40,
-                    status: 'parcial'
-                },
-                {
-                    id: 3,
-                    fecha: iso(d2),
-                    obra: 'Obra Central',
-                    totalCantidad: 4,
-                    totalCobrar: 4*25,
-                    totalPagado: 0,
-                    status: 'pendiente'
-                }
-            ];
-            try { localStorage.setItem('registros', JSON.stringify(registros)); } catch {}
-        }
-    })();
+    }
+
 
     // Normaliza fechas guardadas a ISO (AAAA-MM-DD) para que los filtros funcionen
     (function normalizeStoredDates(){
@@ -5588,6 +5572,8 @@
       }
     })();
     </script>
+    <!-- API Service -->
+    <script src="api.js"></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
