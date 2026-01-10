@@ -1771,6 +1771,8 @@
                 initReportesFilters(); // para detallados cuando se abra la pestaña
                 loadReportesResumenDiario();
                 loadReportesResumenSemanal();
+                // Cargar tabla detallada inmediatamente al abrir Reportes
+                loadReportesView();
             } else if (section === 'inicio') {
                 // Inicializar resumen general cuando se visita Inicio explícitamente
                 initResumenGeneral();
@@ -3926,11 +3928,15 @@
                 return;
             }
             showRegistroAddAlert('Registro guardado correctamente.', 'success');
-            // Navegar a resumen
+            // Navegar a resumen y refrescar vistas que dependen de registros
             setTimeout(() => {
                 currentEditRegistroId = null;
                 changeSection('registros-resumen');
                 loadRegistrosResumen();
+                // Refrescar reportes para que el nuevo/actualizado registro se vea sin recargar
+                loadReportesResumenDiario();
+                loadReportesResumenSemanal();
+                loadReportesView();
             }, 400);
         }
 
@@ -3945,16 +3951,60 @@
 
         // Editar un registro desde el resumen
         function editRegistro(id) {
+            try { console.log('Editando registro', id); } catch {}
+            
+            // Buscar el registro
+            const registro = registros.find(r => r.id === id);
+            if (!registro) {
+                alert('Registro no encontrado');
+                return;
+            }
+            
+            // Guardar ID para modo edición
             currentEditRegistroId = id;
             
             // Cambiar título
             const title = document.getElementById('registro-add-title');
             if (title) title.textContent = 'Editar Registro';
             
-            // Asegurar modo edición (sin readonly)
-            setTimeout(() => setReadonlyMode(false), 200);
-            
+            // Cambiar a la sección
             changeSection('registros-add');
+            
+            // Cargar los datos del registro
+            setTimeout(() => {
+                // Establecer fecha y obra
+                const fechaInput = document.getElementById('registro-fecha');
+                if (fechaInput) fechaInput.value = registro.fecha || '';
+                
+                const obraSelect = document.getElementById('registro-obra');
+                if (obraSelect) {
+                    obraSelect.value = registro.obra || '';
+                    // Renderizar tabla con los clientes
+                    if (registro.tipo !== 'adicional') {
+                        renderRegistroTableInline(registro.obra);
+                    } else {
+                        renderRegistroAdicionalInline(registro.items?.[0]?.clienteNombre || 'Adicionales');
+                    }
+                }
+                
+                // Cargar items
+                setTimeout(() => {
+                    (registro.items || []).forEach(item => {
+                        (item.productos || []).forEach(prod => {
+                            const chk = document.getElementById(`rp-${item.clienteId}-${prod.productoId}`);
+                            const qty = document.getElementById(`rq-${item.clienteId}-${prod.productoId}`);
+                            if (chk) chk.checked = true;
+                            if (qty) { qty.disabled = false; qty.value = String(prod.cantidad || 0); }
+                        });
+                        const paidChk = document.querySelector(`[data-paid-for="${item.clienteId}"]`);
+                        if (paidChk) paidChk.checked = !!item.pagado;
+                    });
+                    recalcRegistroTotals();
+                }, 200);
+                
+                // Asegurar modo edición (sin readonly)
+                setReadonlyMode(false);
+            }, 150);
         }
 
         // Eliminar un registro
