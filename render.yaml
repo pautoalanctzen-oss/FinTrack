@@ -1,4 +1,12 @@
 services:
+  # Base de datos PostgreSQL (GRATIS y PERMANENTE)
+  - type: pserv
+    name: aplicacion-mi-db
+    plan: free
+    databaseName: aplicacion_mi_db
+    databaseUser: aplicacion_user
+    
+  # Servidor Backend
   - type: web
     name: aplicacion-mi-backend
     env: python
@@ -8,4 +16,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aplicacion-mi-db
+          property: connectionString
     autoDeploy: true

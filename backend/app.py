@@ -16,6 +16,12 @@ import sys
 import traceback
 from typing import Union
 import time
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
 
 # =======================
 # CONFIGURACIÓN DE LOGGING
@@ -32,44 +38,83 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Sistema de Login y Registro", version="1.0.0")
 
-# Base de datos SQLite (ruta absoluta para evitar inconsistencias por CWD)
-DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")
+# Configuración de base de datos
+DATABASE_URL = os.getenv("DATABASE_URL")  # PostgreSQL en producción
+USE_POSTGRES = DATABASE_URL and POSTGRES_AVAILABLE
+DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")  # SQLite local
+
+if USE_POSTGRES:
+    logger.info(f"Usando PostgreSQL en producción")
+else:
+    logger.info(f"Usando SQLite: {DB_PATH}")
 
 
 @contextmanager
 def get_db():
-    """Context manager para manejar conexiones a la base de datos con retry logic."""
-    max_retries = 3
-    retry_delay = 0.5
-    conn = None
-    
-    for attempt in range(max_retries):
+    """Context manager para manejar conexiones a la base de datos (PostgreSQL o SQLite)."""
+    if USE_POSTGRES:
+        # PostgreSQL en producción
+        max_retries = 3
+        retry_delay = 0.5
+        conn = None
+        
+        for attempt in range(max_retries):
+            try:
+                conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+                conn.set_session(autocommit=False)
+                break
+            except Exception as e:
+                logger.error(f"Error al conectar a PostgreSQL (intento {attempt + 1}/{max_retries}): {e}")
+                if conn:
+                    conn.close()
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                else:
+                    logger.critical("No se pudo establecer conexión con PostgreSQL")
+                    raise
+        
         try:
-            conn = sqlite3.connect(DB_PATH, timeout=10.0)
-            conn.row_factory = sqlite3.Row
-            # Test the connection
-            conn.execute("SELECT 1")
-            break
-        except sqlite3.Error as e:
-            logger.error(f"Error al conectar a DB (intento {attempt + 1}/{max_retries}): {e}")
+            yield conn
+        except Exception as e:
+            logger.error(f"Error durante operación de DB: {e}")
+            if conn:
+                conn.rollback()
+            raise
+        finally:
             if conn:
                 conn.close()
-            if attempt < max_retries - 1:
-                time.sleep(retry_delay)
-            else:
-                logger.critical("No se pudo establecer conexión con la base de datos")
-                raise
-    
-    try:
-        yield conn
-    except Exception as e:
-        logger.error(f"Error durante operación de DB: {e}")
-        if conn:
-            conn.rollback()
-        raise
-    finally:
-        if conn:
-            conn.close()
+    else:
+        # SQLite en desarrollo
+        max_retries = 3
+        retry_delay = 0.5
+        conn = None
+        
+        for attempt in range(max_retries):
+            try:
+                conn = sqlite3.connect(DB_PATH, timeout=10.0)
+                conn.row_factory = sqlite3.Row
+                conn.execute("SELECT 1")
+                break
+            except sqlite3.Error as e:
+                logger.error(f"Error al conectar a SQLite (intento {attempt + 1}/{max_retries}): {e}")
+                if conn:
+                    conn.close()
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                else:
+                    logger.critical("No se pudo establecer conexión con la base de datos")
+                    raise
+        
+        try:
+            yield conn
+        except Exception as e:
+            logger.error(f"Error durante operación de DB: {e}")
+            if conn:
+                conn.rollback()
+            raise
+        finally:
+            if conn:
+                conn.close()
 
 
 def init_db():
@@ -77,75 +122,142 @@ def init_db():
     try:
         logger.info("Inicializando base de datos...")
         with get_db() as conn:
-            # Tabla de usuarios
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT UNIQUE NOT NULL,
-                    username TEXT UNIQUE NOT NULL,
-                    birthdate TEXT NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+            cursor = conn.cursor()
             
-            # Tabla de obras
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS obras (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    nombre TEXT NOT NULL,
-                    ubicacion TEXT,
-                    estado TEXT DEFAULT 'activa',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # Tabla de clientes
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS clientes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    nombre TEXT NOT NULL,
-                    cedula TEXT,
-                    obra TEXT,
-                    estado TEXT DEFAULT 'activo',
-                    fecha TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # Tabla de productos
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS productos (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    nombre TEXT NOT NULL,
-                    precio REAL NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
-            
-            # Tabla de registros
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS registros (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    fecha TEXT,
-                    obra TEXT,
-                    totalCantidad INTEGER DEFAULT 0,
-                    totalCobrar REAL DEFAULT 0,
-                    totalPagado REAL DEFAULT 0,
-                    status TEXT DEFAULT 'pendiente',
-                    clientesAdicionales TEXT,
-                    detalles TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            """)
+            if USE_POSTGRES:
+                # PostgreSQL - usar SERIAL en lugar de AUTOINCREMENT
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id SERIAL PRIMARY KEY,
+                        email TEXT UNIQUE NOT NULL,
+                        username TEXT UNIQUE NOT NULL,
+                        birthdate TEXT NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS obras (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        ubicacion TEXT,
+                        estado TEXT DEFAULT 'activa',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS clientes (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        cedula TEXT,
+                        obra TEXT,
+                        estado TEXT DEFAULT 'activo',
+                        fecha TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        fecha TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS productos (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        precio REAL NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS registros (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        fecha TEXT,
+                        obra TEXT,
+                        totalCantidad INTEGER DEFAULT 0,
+                        totalCobrar REAL DEFAULT 0,
+                        totalPagado REAL DEFAULT 0,
+                        status TEXT DEFAULT 'pendiente',
+                        clientesAdicionales TEXT,
+                        detalles TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+            else:
+                # SQLite - usar AUTOINCREMENT
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        email TEXT UNIQUE NOT NULL,
+                        username TEXT UNIQUE NOT NULL,
+                        birthdate TEXT NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS obras (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        ubicacion TEXT,
+                        estado TEXT DEFAULT 'activa',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS clientes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        cedula TEXT,
+                        obra TEXT,
+                        estado TEXT DEFAULT 'activo',
+                        fecha TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS productos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        precio REAL NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS registros (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        fecha TEXT,
+                        obra TEXT,
+                        totalCantidad INTEGER DEFAULT 0,
+                        totalCobrar REAL DEFAULT 0,
+                        totalPagado REAL DEFAULT 0,
+                        status TEXT DEFAULT 'pendiente',
+                        clientesAdicionales TEXT,
+                        detalles TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
             
             conn.commit()
         logger.info("Base de datos inicializada correctamente")
@@ -156,6 +268,25 @@ def init_db():
 
 # Inicializar DB al arrancar
 init_db()
+
+
+def get_last_insert_id(cursor):
+    """Obtiene el último ID insertado (compatible con SQLite y PostgreSQL)."""
+    if USE_POSTGRES:
+        return cursor.fetchone()[0]
+    else:
+        return cursor.lastrowid
+
+
+def sql(query, params=None):
+    """
+    Convierte automáticamente placeholders SQL de SQLite (?) a PostgreSQL (%s).
+    Uso: sql("SELECT * FROM users WHERE id = ?", (user_id,))
+    """
+    if USE_POSTGRES and query:
+        # Convertir ? a %s para PostgreSQL
+        query = query.replace("?", "%s")
+    return (query, params) if params else (query,)
 
 
 def ensure_demo_user():
@@ -231,6 +362,15 @@ async def home():
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return {"message": "Bienvenido a la API"}
+
+
+@app.get("/dashboard.html")
+async def dashboard():
+    """Sirve la página de dashboard."""
+    dashboard_path = os.path.join(frontend_path, "dashboard.html")
+    if os.path.exists(dashboard_path):
+        return FileResponse(dashboard_path)
+    return {"detail": "Not Found"}
 
 
 @app.get("/health")
@@ -372,13 +512,20 @@ async def api_register(
         # Insertar usuario en la base de datos
         try:
             with get_db() as conn:
-                conn.execute(
-                    "INSERT INTO users (email, username, birthdate, password_hash) VALUES (?, ?, ?, ?)",
-                    (email, username, birthdate, password_hash)
-                )
+                cursor = conn.cursor()
+                if USE_POSTGRES:
+                    cursor.execute(
+                        "INSERT INTO users (email, username, birthdate, password_hash) VALUES (%s, %s, %s, %s)",
+                        (email, username, birthdate, password_hash)
+                    )
+                else:
+                    cursor.execute(
+                        "INSERT INTO users (email, username, birthdate, password_hash) VALUES (?, ?, ?, ?)",
+                        (email, username, birthdate, password_hash)
+                    )
                 conn.commit()
             logger.info(f"Usuario registrado exitosamente: {username}")
-        except sqlite3.IntegrityError as e:
+        except Exception as e:
             logger.warning(f"Registro fallido - usuario o email duplicado: {username}")
             raise HTTPException(status_code=400, detail={"message": "El usuario o correo ya existe"})
 
@@ -408,15 +555,22 @@ async def update_email(username: str = Form(...), email: str = Form(...)):
     if "@" not in email or "." not in email:
         raise HTTPException(status_code=400, detail={"message": "Correo inválido"})
     with get_db() as conn:
+        cursor = conn.cursor()
         # Verificar que usuario exista
-        cur = conn.execute("SELECT id FROM users WHERE username = ?", (username,))
-        if not cur.fetchone():
+        if USE_POSTGRES:
+            cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        else:
+            cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+        if not cursor.fetchone():
             raise HTTPException(status_code=404, detail={"message": "Usuario no encontrado"})
         # Intentar actualizar
         try:
-            conn.execute("UPDATE users SET email = ? WHERE username = ?", (email, username))
+            if USE_POSTGRES:
+                cursor.execute("UPDATE users SET email = %s WHERE username = %s", (email, username))
+            else:
+                cursor.execute("UPDATE users SET email = ? WHERE username = ?", (email, username))
             conn.commit()
-        except sqlite3.IntegrityError:
+        except Exception:
             raise HTTPException(status_code=400, detail={"message": "El correo ya está en uso"})
     return {"success": True}
 
@@ -427,13 +581,20 @@ async def update_username(username: str = Form(...), new_username: str = Form(..
     if len(new_username) < 3:
         raise HTTPException(status_code=400, detail={"message": "El usuario debe tener al menos 3 caracteres"})
     with get_db() as conn:
-        cur = conn.execute("SELECT id FROM users WHERE username = ?", (username,))
-        if not cur.fetchone():
+        cursor = conn.cursor()
+        if USE_POSTGRES:
+            cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        else:
+            cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+        if not cursor.fetchone():
             raise HTTPException(status_code=404, detail={"message": "Usuario no encontrado"})
         try:
-            conn.execute("UPDATE users SET username = ? WHERE username = ?", (new_username, username))
+            if USE_POSTGRES:
+                cursor.execute("UPDATE users SET username = %s WHERE username = %s", (new_username, username))
+            else:
+                cursor.execute("UPDATE users SET username = ? WHERE username = ?", (new_username, username))
             conn.commit()
-        except sqlite3.IntegrityError:
+        except Exception:
             raise HTTPException(status_code=400, detail={"message": "El usuario ya existe"})
     return {"success": True}
 
@@ -507,19 +668,29 @@ async def create_cliente(
     """Crea un nuevo cliente."""
     try:
         with get_db() as conn:
+            cursor = conn.cursor()
             # Obtener user_id
-            user = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+            cursor.execute(*sql("SELECT id FROM users WHERE username = ?", (username,)))
+            user = cursor.fetchone()
             if not user:
                 raise HTTPException(status_code=404, detail={"message": "Usuario no encontrado"})
             
-            # Insertar cliente
-            cursor = conn.execute(
-                "INSERT INTO clientes (user_id, nombre, cedula, obra, estado, fecha) VALUES (?, ?, ?, ?, ?, ?)",
-                (user["id"], nombre, cedula, obra, estado, fecha)
-            )
+            # Insertar cliente y obtener ID
+            if USE_POSTGRES:
+                cursor.execute(
+                    "INSERT INTO clientes (user_id, nombre, cedula, obra, estado, fecha) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                    (user["id"] if isinstance(user, dict) else user[0], nombre, cedula, obra, estado, fecha)
+                )
+                new_id = cursor.fetchone()[0]
+            else:
+                cursor.execute(
+                    "INSERT INTO clientes (user_id, nombre, cedula, obra, estado, fecha) VALUES (?, ?, ?, ?, ?, ?)",
+                    (user["id"] if isinstance(user, dict) else user[0], nombre, cedula, obra, estado, fecha)
+                )
+                new_id = cursor.lastrowid
             conn.commit()
             
-            return {"success": True, "id": cursor.lastrowid}
+            return {"success": True, "id": new_id}
     except Exception as e:
         logger.error(f"Error al crear cliente: {e}")
         raise HTTPException(status_code=500, detail={"message": "Error al crear cliente"})
@@ -1207,6 +1378,111 @@ async def import_backup(request: Request):
     except Exception as e:
         logger.error(f"Error en import-backup: {e}")
         raise HTTPException(status_code=500, detail={"message": f"Error al importar: {str(e)}"})
+
+
+# ----- Endpoints de Administración (con clave secreta) -----
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "admin_secret_key_2026")
+
+@app.post("/api/admin/verify-password")
+async def admin_verify_password(
+    username: str = Form(...),
+    password: str = Form(...),
+    admin_secret: str = Form(...)
+):
+    """Endpoint de administración para verificar si una contraseña es correcta."""
+    if admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail={"message": "Acceso denegado"})
+    
+    try:
+        with get_db() as conn:
+            cursor = conn.execute(
+                "SELECT password_hash FROM users WHERE username = ?",
+                (username,)
+            )
+            row = cursor.fetchone()
+            
+            if not row:
+                return {"success": False, "message": f"Usuario '{username}' no encontrado"}
+            
+            password_hash = row["password_hash"]
+            is_valid = bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+            
+            return {
+                "success": True,
+                "username": username,
+                "password_valid": is_valid,
+                "message": "Contraseña correcta" if is_valid else "Contraseña incorrecta"
+            }
+    except Exception as e:
+        logger.error(f"Error verificando contraseña: {e}")
+        raise HTTPException(status_code=500, detail={"message": str(e)})
+
+
+@app.post("/api/admin/reset-password")
+async def admin_reset_password(
+    username: str = Form(...),
+    new_password: str = Form(...),
+    admin_secret: str = Form(...)
+):
+    """Endpoint de administración para resetear contraseña de un usuario."""
+    if admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail={"message": "Acceso denegado"})
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail={"message": "La contraseña debe tener al menos 6 caracteres"})
+    
+    try:
+        with get_db() as conn:
+            # Verificar que usuario existe
+            cursor = conn.execute("SELECT id FROM users WHERE username = ?", (username,))
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail={"message": f"Usuario '{username}' no encontrado"})
+            
+            # Hashear nueva contraseña
+            password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            
+            # Actualizar contraseña
+            conn.execute("UPDATE users SET password_hash = ? WHERE username = ?", (password_hash, username))
+            conn.commit()
+            
+            logger.info(f"Contraseña reseteada exitosamente para usuario: {username}")
+            return {
+                "success": True,
+                "message": f"Contraseña actualizada para '{username}'",
+                "username": username
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reseteando contraseña: {e}")
+        raise HTTPException(status_code=500, detail={"message": str(e)})
+
+
+@app.get("/api/admin/list-users")
+async def admin_list_users(admin_secret: str):
+    """Lista todos los usuarios (solo email y username, sin contraseñas)."""
+    if admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail={"message": "Acceso denegado"})
+    
+    try:
+        with get_db() as conn:
+            cursor = conn.execute(
+                "SELECT id, email, username, birthdate, created_at FROM users ORDER BY created_at DESC"
+            )
+            users = []
+            for row in cursor.fetchall():
+                users.append({
+                    "id": row["id"],
+                    "email": row["email"],
+                    "username": row["username"],
+                    "birthdate": row["birthdate"],
+                    "created_at": row["created_at"]
+                })
+            
+            return {"success": True, "users": users, "count": len(users)}
+    except Exception as e:
+        logger.error(f"Error listando usuarios: {e}")
+        raise HTTPException(status_code=500, detail={"message": str(e)})
 
 
 if __name__ == "__main__":

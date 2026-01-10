@@ -2741,6 +2741,23 @@
     let originalReportesTheadHtml = '';
 
         // Cargar obras en los selectores
+        // Función para refrescar registros desde el backend
+        async function refreshRegistrosFromBackend() {
+            try {
+                const username = sessionStorage.getItem('username');
+                if (username && username !== 'demo') {
+                    const registrosData = await API.getRegistros();
+                    registros = (registrosData || []).map(r => {
+                        const items = r.items || r.detalles || [];
+                        return { ...r, items };
+                    });
+                    console.log('✓ Registros refrescados desde el backend:', registros.length, 'registros');
+                }
+            } catch (error) {
+                console.error('Error al refrescar registros:', error);
+            }
+        }
+
         function loadObrasSelect() {
             const selects = ['cliente-obra', 'edit-cliente-obra', 'filter-obra', 'add-clientes-obra', 'admin-cliente-obra', 'filter-reportes-obra'];
             // Agregar select de registros si existe
@@ -2801,6 +2818,12 @@
             const fFin = document.getElementById('filter-registros-fecha-fin');
             if (fObra && !fObra._bound) { fObra.addEventListener('change', loadRegistrosResumen); fObra._bound = true; }
             guardRange('filter-registros-fecha-inicio', 'filter-registros-fecha-fin', loadRegistrosResumen);
+            
+            // Refrescar registros desde el backend antes de mostrar
+            refreshRegistrosFromBackend().then(() => {
+                loadObrasSelect();
+                loadRegistrosResumen();
+            });
         }
 
         function loadRegistrosResumen() {
@@ -3596,6 +3619,7 @@
             if (currentEditRegistroId) {
                 const reg = registros.find(r => r.id === currentEditRegistroId);
                 if (reg) {
+                    console.log('📝 Editando registro:', reg);
                     if (fechaInput) fechaInput.value = reg.fecha || today;
                     if (reg.tipo === 'adicional') {
                         if (obraSel) obraSel.value = '__ADICIONAL__';
@@ -3604,19 +3628,27 @@
                         if (obraSel) obraSel.value = reg.obra || '';
                         if (reg.obra) renderRegistroTableInline(reg.obra);
                     }
+                    // Mayor delay para asegurar que renderRegistro* haya creado los elementos del DOM
                     setTimeout(() => {
-                        (reg.items || []).forEach(item => {
+                        const items = reg.items || reg.detalles || [];
+                        console.log('📋 Items a cargar:', items);
+                        items.forEach(item => {
+                            const clienteId = item.clienteId || item.id;
+                            console.log('👤 Procesando item:', clienteId, item);
                             (item.productos || []).forEach(prod => {
-                                const chk = document.getElementById(`rp-${item.clienteId}-${prod.productoId}`);
-                                const qty = document.getElementById(`rq-${item.clienteId}-${prod.productoId}`);
+                                const chk = document.getElementById(`rp-${clienteId}-${prod.productoId}`);
+                                const qty = document.getElementById(`rq-${clienteId}-${prod.productoId}`);
+                                console.log(`  🛍️ Producto ${prod.nombre} (${prod.productoId}): chk=${!!chk}, qty=${!!qty}`);
                                 if (chk) chk.checked = true;
                                 if (qty) { qty.disabled = false; qty.value = String(prod.cantidad || 0); }
                             });
-                            const paidChk = document.querySelector(`[data-paid-for="${item.clienteId}"]`);
+                            const paidChk = document.querySelector(`[data-paid-for="${clienteId}"]`);
+                            console.log(`  💰 Checkbox pagado: ${!!paidChk}`);
                             if (paidChk) paidChk.checked = !!item.pagado;
                         });
                         recalcRegistroTotals();
-                    }, 120);
+                        console.log('✓ Totales recalculados');
+                    }, 300);
                 }
             }
         }
@@ -3929,8 +3961,10 @@
             }
             showRegistroAddAlert('Registro guardado correctamente.', 'success');
             // Navegar a resumen y refrescar vistas que dependen de registros
-            setTimeout(() => {
+            setTimeout(async () => {
                 currentEditRegistroId = null;
+                // Refrescar registros desde el backend para sincronización
+                await refreshRegistrosFromBackend();
                 changeSection('registros-resumen');
                 loadRegistrosResumen();
                 // Refrescar reportes para que el nuevo/actualizado registro se vea sin recargar
@@ -4015,8 +4049,8 @@
                 // Eliminar del backend
                 await API.deleteRegistro(id);
                 
-                // Actualizar array local
-                registros = registros.filter(r => r.id !== id);
+                // Refrescar registros desde el backend
+                await refreshRegistrosFromBackend();
                 loadRegistrosResumen();
             } catch (error) {
                 console.error('Error al eliminar registro:', error);
