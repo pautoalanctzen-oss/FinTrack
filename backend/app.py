@@ -1,6 +1,41 @@
 from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    import_from_backup(backup_path, username)    username = "Panchita's Catering"    backup_path = sys.argv[1] if len(sys.argv) > 1 else r"c:\Users\pauto\Downloads\backup_panchitas_exacto.json"if __name__ == "__main__":    print(f"Response: {r.json()}")    print(f"Status: {r.status_code}")    r = requests.post(f"{BASE_URL}/api/import-backup", json=payload, timeout=120)    print(f"\nImportando a {BASE_URL}/api/import-backup...")        }        "registros": data.get("registros", []),        "productos": data.get("productos", []),        "obras": data.get("obras", []),        "clientes": data.get("clientes", []),        "username": username,    payload = {        print(f"  Registros: {len(data.get('registros', []))}")    print(f"  Productos: {len(data.get('productos', []))}")    print(f"  Obras: {len(data.get('obras', []))}")    print(f"  Clientes: {len(data.get('clientes', []))}")    print(f"Datos en backup:")            data = json.load(f)    with open(backup_path, "r", encoding="utf-8") as f:    print(f"Leyendo {backup_path}...")def import_from_backup(backup_path: str, username: str):BASE_URL = "https://aplicaci-n-mi.onrender.com"import sysimport requestsimport jsonfrom fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
@@ -1126,6 +1161,101 @@ async def get_reportes(username: str, obra: str = None, fecha_inicio: str = None
         raise HTTPException(status_code=500, detail={"message": "Error al generar reportes"})
 
 
+# ===============================================
+# ENDPOINT PARA BULK IMPORT DESDE BACKUP
+# ===============================================
+
+@app.post("/api/import-backup")
+async def import_backup(request: Request):
+    """Importa clientes, obras, productos, registros en bulk desde un JSON."""
+    try:
+        import json
+        body = await request.json()
+        
+        username = body.get('username')
+        clientes_data = body.get('clientes', [])
+        obras_data = body.get('obras', [])
+        productos_data = body.get('productos', [])
+        registros_data = body.get('registros', [])
+        
+        with get_db() as conn:
+            # Obtener user_id
+            user = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+            if not user:
+                raise HTTPException(status_code=404, detail={"message": "Usuario no encontrado"})
+            
+            user_id = user["id"]
+            counts = {"clientes": 0, "obras": 0, "productos": 0, "registros": 0}
+            
+            # Import clientes
+            for c in clientes_data:
+                try:
+                    conn.execute(
+                        "INSERT INTO clientes (user_id, nombre, cedula, obra, estado, fecha) VALUES (?, ?, ?, ?, ?, ?)",
+                        (user_id, c.get("nombre", ""), c.get("cedula"), c.get("obra"), c.get("estado", "activo"), c.get("fecha"))
+                    )
+                    counts["clientes"] += 1
+                except Exception as e:
+                    logger.warning(f"Error importing cliente: {e}")
+            
+            # Import obras
+            for o in obras_data:
+                try:
+                    conn.execute(
+                        "INSERT INTO obras (user_id, nombre, ubicacion, estado) VALUES (?, ?, ?, ?)",
+                        (user_id, o.get("nombre", ""), o.get("ubicacion"), o.get("estado", "activa"))
+                    )
+                    counts["obras"] += 1
+                except Exception as e:
+                    logger.warning(f"Error importing obra: {e}")
+            
+            # Import productos
+            for p in productos_data:
+                try:
+                    conn.execute(
+                        "INSERT INTO productos (user_id, nombre, precio) VALUES (?, ?, ?)",
+                        (user_id, p.get("nombre", ""), float(p.get("precio", 0)))
+                    )
+                    counts["productos"] += 1
+                except Exception as e:
+                    logger.warning(f"Error importing producto: {e}")
+            
+            # Import registros
+            for r in registros_data:
+                try:
+                    # Map 'items' to 'detalles'
+                    detalles = r.get("items") or r.get("detalles") or []
+                    detalles_json = json.dumps(detalles) if detalles else None
+                    
+                    # Derive clientesAdicionales from items if tipo='adicional'
+                    adicionales = []
+                    for it in detalles:
+                        if str(it.get("tipo", "")).lower() == "adicional":
+                            adicionales.append({"cliente": it.get("cliente"), "valor": it.get("costo", it.get("precio", 0))})
+                    adicionales_json = json.dumps(adicionales) if adicionales else None
+                    
+                    conn.execute(
+                        """INSERT INTO registros 
+                           (user_id, fecha, obra, totalCantidad, totalCobrar, totalPagado, status, clientesAdicionales, detalles)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (user_id, r.get("fecha"), r.get("obra"), r.get("totalCantidad", 0), 
+                         r.get("totalCobrar", 0), r.get("totalPagado", 0), r.get("status", "pendiente"),
+                         adicionales_json, detalles_json)
+                    )
+                    counts["registros"] += 1
+                except Exception as e:
+                    logger.warning(f"Error importing registro: {e}")
+            
+            conn.commit()
+            return {"success": True, "imported": counts}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en import-backup: {e}")
+        raise HTTPException(status_code=500, detail={"message": f"Error al importar: {str(e)}"})
+
+
 if __name__ == "__main__":
     # Ejecuta la app para desarrollo. Requiere 'uvicorn' instalado.
     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+

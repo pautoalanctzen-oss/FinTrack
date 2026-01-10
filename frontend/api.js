@@ -264,8 +264,12 @@ const API = {
             totalCobrar: registro.totalCobrar || 0,
             totalPagado: registro.totalPagado || 0,
             status: registro.status || 'pendiente',
-            clientesAdicionales: registro.clientesAdicionales || [],
-            detalles: registro.detalles || []
+            // Enviar nombres de clientes adicionales si el registro es de tipo adicional
+            clientesAdicionales: (registro.tipo === 'adicional')
+                ? (registro.items || registro.detalles || []).map(it => it.clienteNombre).filter(Boolean)
+                : (registro.clientesAdicionales || []),
+            // Mapear items del frontend al campo 'detalles' del backend
+            detalles: registro.items || registro.detalles || []
         };
         
         return await this.request('/api/registros', {
@@ -286,8 +290,10 @@ const API = {
             totalCobrar: registro.totalCobrar || 0,
             totalPagado: registro.totalPagado || 0,
             status: registro.status || 'pendiente',
-            clientesAdicionales: registro.clientesAdicionales || [],
-            detalles: registro.detalles || []
+            clientesAdicionales: (registro.tipo === 'adicional')
+                ? (registro.items || registro.detalles || []).map(it => it.clienteNombre).filter(Boolean)
+                : (registro.clientesAdicionales || []),
+            detalles: registro.items || registro.detalles || []
         };
         
         return await this.request(`/api/registros/${id}`, {

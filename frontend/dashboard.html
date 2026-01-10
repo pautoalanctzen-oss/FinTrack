@@ -2621,7 +2621,11 @@
             clientes = clientesData || [];
             obras = obrasData || [];
             productos = productosData || [];
-            registros = registrosData || [];
+            registros = (registrosData || []).map(r => {
+                // Normalizar: asegurar que exista 'items' para edición/visualización
+                const items = r.items || r.detalles || [];
+                return { ...r, items };
+            });
 
             console.log(`✓ Datos cargados: ${clientes.length} clientes, ${obras.length} obras, ${productos.length} productos, ${registros.length} registros`);
         } catch (error) {
@@ -3940,6 +3944,14 @@
                 
                 // Esperar a que se cargue la tabla y luego llenar los datos
                 setTimeout(() => {
+                    // Mostrar aviso si el registro no tiene items (histórico agregado sin desglose)
+                    if (!registro.items || registro.items.length === 0) {
+                        showRegistroAddAlert('Este registro histórico no contiene el desglose por cliente/producto. Puedes ver los totales, pero la edición detallada no está disponible.', 'info');
+                        // Aún recalcular totales para mostrar correctamente
+                        recalcRegistroTotals();
+                        setReadonlyMode(true);
+                        return;
+                    }
                     registro.items.forEach(item => {
                         item.productos.forEach(prod => {
                             const qtyInput = document.getElementById(`rq-${item.clienteId}-${prod.productoId}`);
