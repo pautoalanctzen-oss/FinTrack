@@ -402,31 +402,19 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <button class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="changeSection('clientes-listado')">
-                            <span class="d-inline-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
-                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                                </svg>
-                            </span>
+                            <i class="bi bi-people-fill" style="font-size: 1.5rem;"></i>
                             <span class="fw-semibold">Registra tus Clientes</span>
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="changeSection('registros-resumen')">
-                            <span class="d-inline-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </span>
+                            <i class="bi bi-cash-coin" style="font-size: 1.5rem;"></i>
                             <span class="fw-semibold">Gestiona tus Cobros</span>
                         </button>
                     </div>
                     <div class="col-md-4">
                         <button class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="changeSection('reportes')">
-                            <span class="d-inline-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-8-6zm-1 16H7v-2h6v2zm3-4H7v-2h10v2zm0-4H7V8h10v2z"/>
-                                </svg>
-                            </span>
+                            <i class="bi bi-file-earmark-text" style="font-size: 1.5rem;"></i>
                             <span class="fw-semibold">Genera tus Reportes</span>
                         </button>
                     </div>
@@ -571,7 +559,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 8.25h18M4.5 6.75h15A1.5 1.5 0 0121 8.25v10.5A1.5 1.5 0 0119.5 20.25h-15A1.5 1.5 0 013 18.75V8.25A1.5 1.5 0 014.5 6.75z" />
                     </svg>
                     <p>No hay registros</p>
-                    <button class="btn btn-primary btn-sm" onclick="goToAddRegistro()">Añadir Registro</button>
+                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2 mx-auto" onclick="goToAddRegistro()">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Añadir Registro</span>
+                    </button>
                 </div>
             </div>
 
@@ -581,12 +572,13 @@
                     <h2 class="mb-0" id="registro-add-title">Añadir Registro</h2>
                     <div class="d-flex gap-2">
                         <button id="btn-editar-registro" class="btn btn-warning btn-sm" onclick="enableEditMode()" style="display: none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16" class="me-1" style="display: inline-block; vertical-align: middle;">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                            </svg>
-                            Editar
+                            <i class="bi bi-pencil"></i>
+                            <span>Editar</span>
                         </button>
-                        <button id="btn-guardar-registro" class="btn btn-primary btn-sm" onclick="saveRegistro()">Guardar Registro</button>
+                        <button id="btn-guardar-registro" class="btn btn-primary btn-sm d-flex align-items-center gap-2" onclick="saveRegistro()">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Guardar Registro</span>
+                        </button>
                     </div>
                 </div>
                 <div id="registro-add-alert" class="alert d-none" role="alert"></div>
