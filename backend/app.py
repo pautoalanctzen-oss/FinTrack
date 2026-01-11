@@ -41,11 +41,14 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Sistema de Login y Registro", version="1.0.0")
 
 # Configuración de base de datos
-# TEMPORAL: forzar SQLite para evitar problemas de conectividad con PostgreSQL en Render
-USE_POSTGRES = False
+DATABASE_URL = os.getenv("DATABASE_URL")  # PostgreSQL en producción (externo o interno)
+USE_POSTGRES = bool(DATABASE_URL) and POSTGRES_AVAILABLE
 DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")  # SQLite local
 
-logger.info(f"Usando SQLite: {DB_PATH}")
+if USE_POSTGRES:
+    logger.info("Usando PostgreSQL en producción")
+else:
+    logger.info(f"Usando SQLite: {DB_PATH}")
 
 
 @contextmanager
