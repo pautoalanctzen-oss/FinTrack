@@ -41,20 +41,11 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Sistema de Login y Registro", version="1.0.0")
 
 # Configuración de base de datos
-DATABASE_URL = os.getenv("DATABASE_URL")  # PostgreSQL en producción
-USE_POSTGRES = DATABASE_URL and POSTGRES_AVAILABLE
+# TEMPORAL: forzar SQLite para evitar problemas de conectividad con PostgreSQL en Render
+USE_POSTGRES = False
 DB_PATH = os.path.join(os.path.dirname(__file__), "users.db")  # SQLite local
 
-if USE_POSTGRES:
-    logger.info(f"Usando PostgreSQL en producción")
-else:
-    logger.info(f"Usando SQLite: {DB_PATH}")
-    # Diagnóstico rápido: por seguridad, no mostramos credenciales ni URL completa
-    logger.info(
-        "Diagnóstico DB -> POSTGRES_AVAILABLE=%s, DATABASE_URL_set=%s",
-        POSTGRES_AVAILABLE,
-        bool(DATABASE_URL)
-    )
+logger.info(f"Usando SQLite: {DB_PATH}")
 
 
 @contextmanager
@@ -499,7 +490,8 @@ async def health():
     try:
         # Verificar conexión a base de datos
         with get_db() as conn:
-            conn.execute("SELECT 1")
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
         
         return {
             "status": "healthy",
