@@ -10,9 +10,11 @@
     header.className = 'mdp-header';
 
     const prev = document.createElement('button');
-    prev.type = 'button'; prev.className = 'mdp-arrow'; prev.textContent = '◀';
+    prev.type = 'button'; prev.className = 'mdp-arrow'; prev.setAttribute('aria-label','Anterior');
+    prev.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
     const next = document.createElement('button');
-    next.type = 'button'; next.className = 'mdp-arrow'; next.textContent = '▶';
+    next.type = 'button'; next.className = 'mdp-arrow'; next.setAttribute('aria-label','Siguiente');
+    next.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
 
     const yearLabel = document.createElement('span'); yearLabel.className='mdp-year';
 
@@ -115,7 +117,7 @@
       ico.style.transform='translateY(-50%)';
       ico.style.color='#6c757d';
       ico.style.pointerEvents='none';
-      ico.innerHTML='\u{1F4C5}'; // calendar emoji
+      ico.innerHTML='📅'; // calendar emoji
       wrap.style.position='relative';
       wrap.appendChild(ico);
       build(wrap,input);

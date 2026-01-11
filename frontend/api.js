@@ -4,9 +4,14 @@
  */
 
 const API = {
-    baseURL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? "http://127.0.0.1:8000"
-        : "https://aplicaci-n-mi.onrender.com",
+    // Usa backend local si se abre en localhost/127.0.0.1 o desde archivo (file://)
+    baseURL: (() => {
+        // Permitir override por dominio personalizado (p.ej., api.fintrack.tu-dominio.com)
+        const override = (typeof window !== 'undefined') && (window.API_BASE_URL || (window.env && window.env.API_BASE_URL));
+        if (override && typeof override === 'string' && override.trim()) return override.trim();
+        const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '' || window.location.protocol === 'file:');
+        return isLocal ? "http://127.0.0.1:8000" : "https://aplicaci-n-mi.onrender.com";
+    })(),
     
     // Obtener username actual
     getUsername() {

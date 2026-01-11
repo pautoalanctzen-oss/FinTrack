@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from fastapi import FastAPI, Request, Form, status
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -16,6 +17,7 @@ import sys
 import traceback
 from typing import Union
 import time
+from starlette.middleware.base import BaseHTTPMiddleware
 try:
     import psycopg2
     from psycopg2.extras import RealDictCursor
@@ -93,6 +95,7 @@ def get_db():
             try:
                 conn = sqlite3.connect(DB_PATH, timeout=10.0)
                 conn.row_factory = sqlite3.Row
+                conn.execute("PRAGMA encoding = 'UTF-8'")
                 conn.execute("SELECT 1")
                 break
             except sqlite3.Error as e:
@@ -303,10 +306,18 @@ def ensure_demo_user():
         with get_db() as conn:
             cur = conn.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email))
             row = cur.fetchone()
-            if row:
-                logger.info("Usuario demo ya existe")
-                return
             password_hash = bcrypt.hashpw(password_plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+            if row:
+                # Actualizar contraseña para asegurar acceso
+                conn.execute(
+                    "UPDATE users SET password_hash = ?, birthdate = ?, email = ? WHERE id = ?",
+                    (password_hash, birthdate, email, row["id"]),
+                )
+                conn.commit()
+                logger.info("Usuario demo ya existía; contraseña restablecida")
+                return
+
             conn.execute(
                 "INSERT INTO users (email, username, birthdate, password_hash) VALUES (?, ?, ?, ?)",
                 (email, username, birthdate, password_hash),
@@ -325,6 +336,12 @@ ensure_demo_user()
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 if os.path.exists(frontend_path):
     app.mount("/frontend", StaticFiles(directory=frontend_path), name="frontend")
+    # Montar la carpeta assets directamente para que sea accesible desde /assets
+    assets_path = os.path.join(frontend_path, "assets")
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+    # Montar archivos JS directamente
+    app.mount("/api.js", StaticFiles(directory=frontend_path, html=True), name="static_js")
 
 # Directorio de plantillas (para compatibilidad, aunque ahora usamos archivos estáticos)
 templates = Jinja2Templates(directory="templates")
@@ -345,6 +362,34 @@ async def error_handling_middleware(request: Request, call_next):
             content={"message": "Error interno del servidor. El error ha sido registrado."},
         )
 
+# Middleware para UTF-8 y anti-caché
+class UTF8Middleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Forzar UTF-8 en todas las respuestas de texto
+        if 'content-type' in response.headers:
+            content_type = response.headers['content-type']
+            # JSON
+            if 'application/json' in content_type and 'charset' not in content_type:
+                response.headers['content-type'] = 'application/json; charset=utf-8'
+            # HTML
+            elif 'text/html' in content_type and 'charset' not in content_type:
+                response.headers['content-type'] = 'text/html; charset=utf-8'
+            # JavaScript
+            elif 'javascript' in content_type and 'charset' not in content_type:
+                response.headers['content-type'] = content_type + '; charset=utf-8'
+        
+        # Agregar cabeceras anti-caché para archivos HTML, CSS, JS e imágenes
+        if any(request.url.path.endswith(ext) for ext in ['.html', '.css', '.js', '.png', '.jpg', '.svg', '.jpeg']) or request.url.path == '/':
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        
+        return response
+
+app.add_middleware(UTF8Middleware)
+
 # CORS para permitir peticiones desde el frontend (archivo local o localhost)
 app.add_middleware(
     CORSMiddleware,
@@ -360,8 +405,47 @@ async def home():
     """Sirve la página de login (index.html)."""
     index_path = os.path.join(frontend_path, "index.html")
     if os.path.exists(index_path):
-        return FileResponse(index_path)
+        return FileResponse(
+            index_path,
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Content-Type": "text/html; charset=utf-8"
+            }
+        )
     return {"message": "Bienvenido a la API"}
+
+
+@app.get("/index.html")
+async def index_html():
+    """Sirve la página de login (index.html)."""
+    index_path = os.path.join(frontend_path, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(
+            index_path,
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Content-Type": "text/html; charset=utf-8"
+            }
+        )
+    return {"detail": "Not Found"}
+
+
+@app.get("/register.html")
+async def register_html():
+    """Sirve la página de registro."""
+    register_path = os.path.join(frontend_path, "register.html")
+    if os.path.exists(register_path):
+        return FileResponse(
+            register_path,
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Content-Type": "text/html; charset=utf-8"
+            }
+        )
+    return {"detail": "Not Found"}
 
 
 @app.get("/dashboard.html")
@@ -369,7 +453,30 @@ async def dashboard():
     """Sirve la página de dashboard."""
     dashboard_path = os.path.join(frontend_path, "dashboard.html")
     if os.path.exists(dashboard_path):
-        return FileResponse(dashboard_path)
+        return FileResponse(
+            dashboard_path, 
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Content-Type": "text/html; charset=utf-8"
+            }
+        )
+    return {"detail": "Not Found"}
+
+
+@app.get("/api.js")
+async def api_js():
+    """Sirve el archivo api.js."""
+    api_path = os.path.join(frontend_path, "api.js")
+    if os.path.exists(api_path):
+        return FileResponse(
+            api_path, 
+            media_type="application/javascript; charset=utf-8", 
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Content-Type": "application/javascript; charset=utf-8"
+            }
+        )
     return {"detail": "Not Found"}
 
 
@@ -1482,6 +1589,152 @@ async def admin_list_users(admin_secret: str):
             return {"success": True, "users": users, "count": len(users)}
     except Exception as e:
         logger.error(f"Error listando usuarios: {e}")
+        raise HTTPException(status_code=500, detail={"message": str(e)})
+
+
+# Exportar Excel con estilos profesionales completos
+@app.post("/api/reportes/export-excel")
+async def export_reportes_excel(request: Request):
+    """Genera archivo Excel con estilos completos usando openpyxl.
+    
+    Formato garantizado:
+    - Usuario: Arial 12, Negrita, Centrado, Celda combinada
+    - Título: Arial 18, Negrita, Centrado, Celda combinada
+    - Fechas: Arial 12, Negrita, Centrado, Celda combinada
+    - Encabezados de columnas: Arial 11, Negrita, Fondo gris
+    - Datos: Arial 10
+    - Totales: Negrita, Fondo gris
+    """
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from openpyxl.utils import get_column_letter
+        from fastapi.responses import Response
+        import io
+
+        data = await request.json()
+        rows = data.get('rows', [])
+        headers = data.get('headers', [])
+        username = data.get('username', 'Usuario')
+        title = data.get('title', 'Reporte')
+        date_range = data.get('date_range', '')
+        currency_cols = data.get('currency_cols', [])
+        mode = data.get('mode', 'general')
+        totals = data.get('totals', None)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Reportes'
+
+        # Definir estilos profesionales
+        font_usuario = Font(name='Arial', bold=True, size=12)
+        font_titulo = Font(name='Arial', bold=True, size=18)
+        font_fechas = Font(name='Arial', bold=True, size=12)
+        font_col_header = Font(name='Arial', bold=True, size=11)
+        font_data = Font(name='Arial', size=10)
+        font_totals = Font(name='Arial', bold=True, size=10)
+        
+        align_center = Alignment(horizontal='center', vertical='center')
+        align_left = Alignment(horizontal='left', vertical='center')
+        align_right = Alignment(horizontal='right', vertical='center')
+        
+        fill_gray = PatternFill(start_color='F0F0F0', end_color='F0F0F0', fill_type='solid')
+        fill_header = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
+        
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Fila 1: Usuario (combinar celdas)
+        ws.merge_cells(f'A1:{get_column_letter(len(headers))}1')
+        cell = ws['A1']
+        cell.value = username
+        cell.font = font_usuario
+        cell.alignment = align_center
+
+        # Fila 2: Título (combinar celdas)
+        ws.merge_cells(f'A2:{get_column_letter(len(headers))}2')
+        cell = ws['A2']
+        cell.value = title
+        cell.font = font_titulo
+        cell.alignment = align_center
+
+        # Fila 3: Rango de fechas (combinar celdas)
+        ws.merge_cells(f'A3:{get_column_letter(len(headers))}3')
+        cell = ws['A3']
+        cell.value = date_range
+        cell.font = font_fechas
+        cell.alignment = align_center
+
+        # Fila 4: vacía (espacio)
+        
+        # Fila 5: Encabezados de columnas
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=5, column=col_idx, value=header)
+            cell.font = font_col_header
+            cell.alignment = align_center
+            cell.fill = fill_header
+            cell.border = thin_border
+
+        # Filas 6+: Datos
+        for r_idx, row in enumerate(rows, start=6):
+            for c_idx, value in enumerate(row, start=1):
+                cell = ws.cell(row=r_idx, column=c_idx, value=value)
+                cell.font = font_data
+                cell.border = thin_border
+                
+                # Alineación según tipo de dato
+                if (c_idx - 1) in currency_cols:
+                    cell.alignment = align_right
+                    if isinstance(value, (int, float)):
+                        cell.number_format = '#,##0.00'
+                elif headers[c_idx - 1] in ['Estado']:
+                    cell.alignment = align_center
+                else:
+                    cell.alignment = align_left
+
+        # Fila de totales (si existe)
+        if totals:
+            totals_row = len(rows) + 6
+            for c_idx, value in enumerate(totals, start=1):
+                cell = ws.cell(row=totals_row, column=c_idx, value=value)
+                cell.font = font_totals
+                cell.fill = fill_gray
+                cell.border = thin_border
+                
+                if (c_idx - 1) in currency_cols and isinstance(value, (int, float)):
+                    cell.alignment = align_right
+                    cell.number_format = '#,##0.00'
+                else:
+                    cell.alignment = align_right if c_idx > 1 else align_left
+
+        # Ajustar anchos de columna por modo
+        col_widths_map = {
+            'general': [16, 22, 12, 16, 16, 16, 12],
+            'detallado': [16, 22, 16, 22, 12, 16, 16, 16, 12],
+            'diario': [22, 22] + [14] * max(0, (len(headers) - 3)) + [16]
+        }
+        widths = col_widths_map.get(mode, [16] * len(headers))
+        for c_idx, width in enumerate(widths, start=1):
+            if c_idx <= len(headers):
+                ws.column_dimensions[get_column_letter(c_idx)].width = width
+
+        # Generar archivo
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+
+        filename = f"reportes_{mode}_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+        return Response(
+            content=buf.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+        )
+    except Exception as e:
+        logger.error(f"Error en export_reportes_excel: {e}")
         raise HTTPException(status_code=500, detail={"message": str(e)})
 
 

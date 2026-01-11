@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Dashboard | FinTrack</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -10,21 +13,33 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Permitir override del backend sin editar código
+        (function injectApiOverride(){
+            try {
+                if (typeof window.API_BASE_URL === 'undefined') {
+                    const saved = localStorage.getItem('api_base_url');
+                    if (saved && saved.trim()) window.API_BASE_URL = saved.trim();
+                }
+            } catch {}
+        })();
+    </script>
     <style>
         :root { 
             --app-bg: #f8f9fa; 
             --app-card-bg: #ffffff;
-            --app-primary: #0d6efd;
-            --app-shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-            --app-shadow-md: 0 4px 16px rgba(0,0,0,0.12);
-            --app-shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-hover: 0 12px 32px rgba(0,0,0,0.18), 0 6px 16px rgba(0,0,0,0.1);
         }
         [data-bs-theme="dark"] {
             --app-bg: #0f0f0f; 
             --app-card-bg: #161616;
-            --app-shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-            --app-shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-            --app-shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-hover: 0 12px 32px rgba(0,0,0,0.6), 0 6px 16px rgba(0,0,0,0.35);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--app-bg); overflow-x: hidden; }
@@ -71,76 +86,7 @@
     .sidebar.expanded ~ .main-content { margin-left: 250px; }
         /* Menú usuario flotante */
     .user-menu-wrapper { position: static; display: flex; align-items: center; gap: 0.5rem; }
-    .user-menu-wrapper .btn { min-width: 90px; }        
-    
-    /* Cards mejoradas con gradientes y sombras */
-    .welcome-card { 
-        background: var(--app-card-bg); 
-        padding: 30px; 
-        border-radius: 16px; 
-        box-shadow: var(--app-shadow-sm);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-    .welcome-card:hover {
-        box-shadow: var(--app-shadow-md);
-        transform: translateY(-2px);
-    }
-    
-    /* Estilos para todas las cards del sistema */
-    .card {
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.06);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: var(--app-card-bg);
-    }
-    .card:hover {
-        box-shadow: var(--app-shadow-md) !important;
-        transform: translateY(-2px);
-    }
-    .card-header {
-        background: linear-gradient(135deg, rgba(13,110,253,0.05) 0%, rgba(13,110,253,0.02) 100%);
-        border-bottom: 1px solid rgba(0,0,0,0.06);
-        font-weight: 600;
-        border-radius: 12px 12px 0 0 !important;
-    }
-    .card-body {
-        transition: all 0.3s ease;
-    }
-    
-    /* Botones con transiciones suaves */
-    .btn {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: 8px;
-        font-weight: 500;
-    }
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: var(--app-shadow-sm);
-    }
-    .btn:active {
-        transform: translateY(0);
-    }
-    
-    /* Inputs y selects con mejor feedback visual */
-    .form-control, .form-select {
-        transition: all 0.3s ease;
-        border-radius: 8px;
-    }
-    .form-control:focus, .form-select:focus {
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-        border-color: #0d6efd;
-    }
-    
-    /* Tablas con hover effect mejorado */
-    .table > tbody > tr {
-        transition: all 0.2s ease;
-    }
-    .table > tbody > tr:hover {
-        background-color: rgba(13, 110, 253, 0.05);
-        transform: scale(1.01);
-        box-shadow: var(--app-shadow-sm);
-    }
+    .user-menu-wrapper .btn { min-width: 90px; }        .welcome-card { background: var(--app-card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
 
         /* Ajustes */
         .settings-container { max-width: 720px; margin: 0 auto; }
@@ -175,7 +121,7 @@
         /* Resumen General helpers */
         .rg-square { aspect-ratio: 1 / 1; }
         @media (max-width: 1199.98px) { /* fall back on smaller screens */
-            .rg-square { aspect-ratio: auto; }
+            .rg-squéare { aspect-ratio: auto; }
         }
         .rg-legend { min-width: 150px; }
         .rg-legend .item { display: flex; align-items: center; margin-bottom: 6px; white-space: nowrap; }
@@ -214,6 +160,147 @@
         .manual-step { background-color: #f8f9fa; padding: 12px 16px; border-left: 3px solid var(--bs-primary); margin: 12px 0; border-radius: 4px; }
         .manual-download-btn { margin-top: 20px; }
 
+        /* ========== ENHANCED UI STYLES ========== */
+        
+        /* Cards con gradientes y sombras mejoradas */
+        .welcome-card { 
+            background: var(--app-card-bg); 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card { 
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.03) 0%, rgba(var(--bs-primary-rgb), 0.01) 100%);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.12);
+        }
+        
+        .card.is-selected {
+            box-shadow: 0 18px 40px rgba(var(--bs-primary-rgb), .28), 0 8px 16px rgba(var(--bs-primary-rgb), .18);
+            border-color: rgba(var(--bs-primary-rgb), .35);
+        }
+        
+        .card.is-selected .card-header {
+            background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.04) 100%);
+        }
+
+        /* Botones con elevación */
+        .btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15), 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--bs-primary) 0%, color-mix(in srgb, var(--bs-primary) 90%, black) 100%);
+        }
+
+        /* Inputs y selects con focus mejorado */
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.15), var(--shadow-sm);
+            transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Tablas con hover mejorado */
+        .table tbody tr {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(var(--bs-primary-rgb), 0.04);
+            transform: scale(1.005);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* Fade-in animation para secciones */
+        .fade-in {
+            animation: fadeSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+        
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Accent borders (estilo Reportes) */
+        .accent-border-primary {
+            border: 2px solid var(--bs-primary) !important;
+        }
+        
+        .accent-border-success {
+            border: 2px solid var(--bs-success) !important;
+        }
+        
+        .accent-border-warning {
+            border: 2px solid var(--bs-warning) !important;
+        }
+        
+        .accent-header-primary {
+            background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08) 0%, rgba(var(--bs-primary-rgb), 0.04) 100%);
+        }
+
+        /* Cards del Dashboard Principal (Inicio) con mayor profundidad */
+        #inicio-content .card:hover,
+        #resumen-general-charts .card:hover,
+        #clientes-listado-content .card:hover,
+        #obra-summary-cards .card:hover,
+        #registros-resumen-content .card:hover,
+        #registros-accordion .card:hover,
+        #reportes-content .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.12) !important;
+        }
+
+        #inicio-content .card,
+        #resumen-general-charts .card,
+        #clientes-listado-content .card,
+        #obra-summary-cards .card,
+        #registros-resumen-content .card,
+        #registros-accordion .card,
+        #reportes-content .card {
+            box-shadow: var(--shadow-sm) !important;
+        }
+
+        /* Respeto a reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .card, .btn, .table tbody tr, .fade-in, .form-control, .form-select {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
         /* Responsive: móvil/tablet */
         @media (max-width: 991.98px) {
             .sidebar { transform: translateX(-100%); width: 260px; }
@@ -231,11 +318,13 @@
 <body>
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header" style="justify-content: center; align-items: center; height: 80px; padding: 0;">
-            <div style="text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;">
-                <img src="assets/logo.svg" alt="FinTrack" style="width: 45px; height: 45px; filter: brightness(0) invert(1);">
-                <span class="menu-text" style="color: white; font-size: 0.9rem; font-weight: 600; margin: 0;">FinTrack</span>
-            </div>
+        <div class="sidebar-header" style="justify-content: center; align-items: center; height: 70px; padding: 0 15px; position: relative;">
+            <span class="menu-text" style="font-weight: 600; font-size: 1.1rem;">Menú</span>
+            <button class="sidebar-toggle" id="toggleBtn" onclick="toggleSidebar()" style="background: none; border: none; padding: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(255, 255, 255, 0.9); border-radius: 8px; transition: all 0.3s; position: absolute; right: 15px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 22px; height: 22px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" />
+                </svg>
+            </button>
         </div>
 
         <ul class="sidebar-menu">
@@ -325,15 +414,6 @@
             </li>
         </ul>
 
-        <!-- Botón toggle -->
-        <div style="position: absolute; bottom: 140px; width: 100%; padding: 0 10px;">
-            <button class="sidebar-toggle" id="toggleBtn" onclick="toggleSidebar()" style="width: 100%; display: flex; justify-content: center; margin: 0;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
-            </button>
-        </div>
-
         <!-- Ajustes al fondo -->
         <ul class="sidebar-menu menu-bottom">
             <li class="menu-item">
@@ -353,6 +433,9 @@
 
     <!-- Barra de tareas fija -->
     <div class="taskbar">
+        <div style="position: absolute; left: 20px; display: flex; align-items: center;">
+            <img src="assets/fintrack-logo.png" alt="FinTrack" style="height: 40px; width: auto;">
+        </div>
         <div class="d-lg-none">
             <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" id="mobileMenuBtn" onclick="toggleSidebar()" aria-label="Abrir menú">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
@@ -401,20 +484,32 @@
                 </div>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <button class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="changeSection('clientes-listado')">
-                            <i class="bi bi-people-fill" style="font-size: 1.5rem;"></i>
+                        <button class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-3 shadow-sm" onclick="changeSection('clientes-listado')">
+                            <span class="d-inline-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.2); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                            </span>
                             <span class="fw-semibold">Registra tus Clientes</span>
                         </button>
                     </div>
                     <div class="col-md-4">
-                        <button class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="changeSection('registros-resumen')">
-                            <i class="bi bi-cash-coin" style="font-size: 1.5rem;"></i>
+                        <button class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-3 shadow-sm" onclick="changeSection('registros-resumen')">
+                            <span class="d-inline-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.2); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
                             <span class="fw-semibold">Gestiona tus Cobros</span>
                         </button>
                     </div>
                     <div class="col-md-4">
-                        <button class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2 shadow-sm" onclick="changeSection('reportes')">
-                            <i class="bi bi-file-earmark-text" style="font-size: 1.5rem;"></i>
+                        <button class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-3 shadow-sm" onclick="changeSection('reportes')">
+                            <span class="d-inline-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.2); border-radius: 50%; width: 40px; height: 40px; flex-shrink: 0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-8-6zm-1 16H7v-2h6v2zm3-4H7v-2h10v2zm0-4H7V8h10v2z"/>
+                                </svg>
+                            </span>
                             <span class="fw-semibold">Genera tus Reportes</span>
                         </button>
                     </div>
@@ -550,7 +645,7 @@
 
                 <!-- Acordeón de registros agrupados por fecha -->
                 <div class="accordion" id="registros-accordion">
-                    <!-- Generado dinámicamente -->
+                    <!-- Generado dinímicamente -->
                 </div>
                 
                 <!-- Placeholder inicial -->
@@ -559,10 +654,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 8.25h18M4.5 6.75h15A1.5 1.5 0 0121 8.25v10.5A1.5 1.5 0 0119.5 20.25h-15A1.5 1.5 0 013 18.75V8.25A1.5 1.5 0 014.5 6.75z" />
                     </svg>
                     <p>No hay registros</p>
-                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2 mx-auto" onclick="goToAddRegistro()">
-                        <i class="bi bi-plus-circle"></i>
-                        <span>Añadir Registro</span>
-                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="goToAddRegistro()">Añadir Registro</button>
                 </div>
             </div>
 
@@ -572,13 +664,12 @@
                     <h2 class="mb-0" id="registro-add-title">Añadir Registro</h2>
                     <div class="d-flex gap-2">
                         <button id="btn-editar-registro" class="btn btn-warning btn-sm" onclick="enableEditMode()" style="display: none;">
-                            <i class="bi bi-pencil"></i>
-                            <span>Editar</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16" class="me-1" style="display: inline-block; vertical-align: middle;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                            </svg>
+                            Editar
                         </button>
-                        <button id="btn-guardar-registro" class="btn btn-primary btn-sm d-flex align-items-center gap-2" onclick="saveRegistro()">
-                            <i class="bi bi-check-circle"></i>
-                            <span>Guardar Registro</span>
-                        </button>
+                        <button id="btn-guardar-registro" class="btn btn-primary btn-sm" onclick="saveRegistro()">Guardar Registro</button>
                     </div>
                 </div>
                 <div id="registro-add-alert" class="alert d-none" role="alert"></div>
@@ -683,17 +774,17 @@
                         <form id="form-producto" class="row g-3">
                             <div class="col-md-6">
                                 <label for="producto-nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="producto-nombre" required>
+                                <input type="text" class="form-control" id="producto-nombre" requéired>
                             </div>
                             <div class="col-md-3">
                                 <label for="producto-codigo" class="form-label">Código <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="producto-codigo" required>
+                                <input type="text" class="form-control" id="producto-codigo" requéired>
                             </div>
                             <div class="col-md-3">
                                 <label for="producto-precio" class="form-label">Precio de Venta <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="producto-precio" step="0.01" min="0" required>
+                                    <input type="number" class="form-control" id="producto-precio" step="0.01" min="0" requéired>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -753,7 +844,7 @@
                         <label for="filter-obra" class="form-label small text-muted">Obra</label>
                         <select class="form-select form-select-sm" id="filter-obra">
                             <option value="">Todas las obras</option>
-                            <!-- Las opciones se cargarán dinámicamente -->
+                            <!-- Las opciones se cargarín dinímicamente -->
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -778,7 +869,7 @@
 
                 <!-- Tarjetas resumen por obra -->
                 <div id="obra-summary-cards" class="row g-3 mb-4 justify-content-center">
-                    <!-- Se generan dinámicamente -->
+                    <!-- Se generan dinímicamente -->
                 </div>
 
                 <!-- Tabla de Clientes -->
@@ -795,7 +886,7 @@
                             </tr>
                         </thead>
                         <tbody id="clientes-table-body">
-                            <!-- Los datos se cargarán dinámicamente -->
+                            <!-- Los datos se cargarín dinímicamente -->
                             <tr>
                                 <td colspan="6" class="text-center text-muted py-5">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" width="48" height="48" class="mb-2 opacity-50">
@@ -831,7 +922,7 @@
                         <form id="form-admin-obra" class="row g-3">
                             <div class="col-md-6">
                                 <label for="admin-obra-nombre" class="form-label">Nombre de la obra <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="admin-obra-nombre" required>
+                                <input type="text" class="form-control" id="admin-obra-nombre" requéired>
                             </div>
                             <div class="col-md-6">
                                 <label for="admin-obra-ubicacion" class="form-label">Ubicación</label>
@@ -861,21 +952,21 @@
                         <form id="form-admin-cliente" class="row g-3">
                             <div class="col-md-6">
                                 <label for="admin-cliente-nombre" class="form-label">Nombre completo <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="admin-cliente-nombre" required>
+                                <input type="text" class="form-control" id="admin-cliente-nombre" requéired>
                             </div>
                             <div class="col-md-6">
                                 <label for="admin-cliente-cedula" class="form-label">Cédula <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="admin-cliente-cedula" required>
+                                <input type="text" class="form-control" id="admin-cliente-cedula" requéired>
                             </div>
                             <div class="col-md-6">
                                 <label for="admin-cliente-obra" class="form-label">Obra <span class="text-danger">*</span></label>
-                                <select class="form-select" id="admin-cliente-obra" required>
+                                <select class="form-select" id="admin-cliente-obra" requéired>
                                     <option value="">Seleccione una obra...</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label for="admin-cliente-estado" class="form-label">Estado <span class="text-danger">*</span></label>
-                                <select class="form-select" id="admin-cliente-estado" required>
+                                <select class="form-select" id="admin-cliente-estado" requéired>
                                     <option value="activo">Activo</option>
                                     <option value="inactivo">Inactivo</option>
                                     <option value="pendiente">Pendiente</option>
@@ -883,7 +974,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="admin-cliente-fecha" class="form-label">Fecha de registro <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="admin-cliente-fecha" data-datepicker="modern" required>
+                                <input type="text" class="form-control" id="admin-cliente-fecha" data-datepicker="modern" requéired>
                             </div>
                             <div class="col-md-6">
                                 <label for="admin-cliente-telefono" class="form-label">Teléfono</label>
@@ -1037,7 +1128,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div></div>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-secondary btn-sm" onclick="exportReportesExcel()">Exportar Excel</button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="exportReportesExcelPro()">Exportar Excel</button>
                                 <button class="btn btn-outline-primary btn-sm" onclick="exportReportesPDF()">Exportar PDF</button>
                             </div>
                         </div>
@@ -1109,7 +1200,7 @@
                                         <th class="text-end">A Cobrar</th>
                                         <th class="text-end">Cobrado</th>
                                         <th class="text-end">Pendiente</th>
-                                        <th>Estado</th>
+                                        <th class="text-center">Estado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
@@ -1170,7 +1261,7 @@
                             <form id="form-email" class="row g-2 settings-container">
                                 <div class="col-md-8">
                                     <label for="new-email" class="form-label">Nuevo correo</label>
-                                    <input type="email" class="form-control form-control-sm" id="new-email" name="email" placeholder="nombre@dominio.com" required>
+                                    <input type="email" class="form-control form-control-sm" id="new-email" name="email" placeholder="nombre@dominio.com" requéired>
                                 </div>
                                 <div class="col-md-4 d-flex align-items-end">
                                     <button type="submit" class="btn btn-primary btn-sm w-100">Guardar correo</button>
@@ -1186,7 +1277,7 @@
                             <form id="form-username" class="row g-2 settings-container">
                                 <div class="col-md-8">
                                     <label for="new-username" class="form-label">Nuevo usuario</label>
-                                    <input type="text" class="form-control form-control-sm" id="new-username" name="new_username" minlength="3" required>
+                                    <input type="text" class="form-control form-control-sm" id="new-username" name="new_username" minlength="3" requéired>
                                 </div>
                                 <div class="col-md-4 d-flex align-items-end">
                                     <button type="submit" class="btn btn-primary btn-sm w-100">Guardar usuario</button>
@@ -1202,12 +1293,12 @@
                             <form id="form-password" class="settings-container">
                                 <div class="mb-3">
                                     <label for="current-password" class="form-label">Contraseña actual</label>
-                                    <input type="password" class="form-control form-control-sm" id="current-password" name="current_password" autocomplete="current-password" required>
+                                    <input type="password" class="form-control form-control-sm" id="current-password" name="current_password" autocomplete="current-password" requéired>
                                 </div>
                                 <div class="mb-3">
                                     <label for="new-password" class="form-label">Nueva contraseña</label>
                                     <div class="password-wrapper">
-                                        <input type="password" class="form-control form-control-sm" id="new-password" name="new_password" required>
+                                        <input type="password" class="form-control form-control-sm" id="new-password" name="new_password" requéired>
                                         <button type="button" class="toggle-password" onclick="togglePwd('new-password', this)">
                                             <!-- ojo cerrado -->
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -1224,7 +1315,7 @@
                                 <div class="mb-3">
                                     <label for="confirm-password" class="form-label">Confirmar nueva contraseña</label>
                                     <div class="password-wrapper">
-                                        <input type="password" class="form-control form-control-sm" id="confirm-password" name="confirm_password" required>
+                                        <input type="password" class="form-control form-control-sm" id="confirm-password" name="confirm_password" requéired>
                                         <button type="button" class="toggle-password" onclick="togglePwd('confirm-password', this)">
                                             <!-- ojo cerrado -->
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -1258,7 +1349,7 @@
 
                             <div class="mb-4">
                                 <h5 class="mb-3">Color principal</h5>
-                                <!-- Paleta de colores estándar + personalizado -->
+                                <!-- Paleta de colores estíndar + personalizado -->
                                 <div class="d-flex flex-wrap gap-2 mb-2" id="color-palette">
                                     <button type="button" class="btn btn-light border btn-sm color-swatch" data-color="#0d6efd">
                                         <span class="rounded-circle me-1" style="display:inline-block;width:14px;height:14px;background:#0d6efd;"></span>
@@ -1310,7 +1401,7 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <img id="business-logo-preview" src="" alt="Logo preview" style="display:none; width:48px; height:48px; object-fit:contain; border:1px solid #e9ecef; border-radius:6px; background:#fff; padding:4px;">
-                                        <button id="business-logo-remove" class="btn btn-light border btn-sm" type="button" style="display:none;">Quitar logo</button>
+                                        <button id="business-logo-remove" class="btn btn-light border btn-sm" type="button" style="display:none;">quitar logo</button>
                                     </div>
                                 </div>
                             </div>
@@ -1408,10 +1499,10 @@
                 <div class="manual-container">
                     <!-- Sidebar con navegación vertical -->
                     <div class="manual-sidebar">
-                        <div class="manual-nav-item active" onclick="showManualSection('inicio')">📊 Inicio</div>
+                        <div class="manual-nav-item active" onclick="showManualSection('inicio')">🏠 Inicio</div>
                         <div class="manual-nav-item" onclick="showManualSection('clientes')">👥 Clientes</div>
-                        <div class="manual-nav-item" onclick="showManualSection('registros')">📝 Registros</div>
-                        <div class="manual-nav-item" onclick="showManualSection('reportes')">📄 Reportes</div>
+                        <div class="manual-nav-item" onclick="showManualSection('registros')">🗓️ Registros</div>
+                        <div class="manual-nav-item" onclick="showManualSection('reportes')">📊 Reportes</div>
                         <div class="manual-nav-item" onclick="showManualSection('ajustes')">⚙️ Ajustes</div>
                     </div>
 
@@ -1424,7 +1515,7 @@
                             
                             <h3>Elementos principales</h3>
                             <ul>
-                                <li><strong>Registro de Clientes:</strong> Acceso rápido para crear nuevos clientes</li>
+                                <li><strong>Registro de Clientes:</strong> Acceso rípido para crear nuevos clientes</li>
                                 <li><strong>Gestión de Cobros:</strong> Administra los pagos y cobros de tus obras</li>
                                 <li><strong>Generación de Reportes:</strong> Crea reportes detallados de tu actividad</li>
                             </ul>
@@ -1437,7 +1528,7 @@
                                 <strong>Paso 2:</strong> Usa el menú lateral para acceder a las diferentes secciones
                             </div>
                             <div class="manual-step">
-                                <strong>Paso 3:</strong> Consulta este manual en cualquier momento para obtener ayuda
+                                <strong>Paso 3:</strong> Consulta este manual en cualquéier momento para obtener ayuda
                             </div>
                         </div>
 
@@ -1454,7 +1545,7 @@
                                 <strong>Paso 2:</strong> Haz clic en "Agregar cliente"
                             </div>
                             <div class="manual-step">
-                                <strong>Paso 3:</strong> Completa los campos requeridos (nombre, contacto, dirección)
+                                <strong>Paso 3:</strong> Completa los campos requéeridos (nombre, contacto, dirección)
                             </div>
                             <div class="manual-step">
                                 <strong>Paso 4:</strong> Haz clic en "Guardar"
@@ -1464,12 +1555,12 @@
                             <ul>
                                 <li>Accede a Clientes → Listado de Clientes</li>
                                 <li>Puedes buscar clientes por nombre o ID</li>
-                                <li>Utiliza los filtros para encontrar rápidamente lo que necesitas</li>
+                                <li>Utiliza los filtros para encontrar rípidamente lo quée necesitas</li>
                             </ul>
 
                             <h3>Editar o eliminar cliente</h3>
                             <ul>
-                                <li>En el listado, haz clic en el botón de editar (lápiz) para modificar datos</li>
+                                <li>En el listado, haz clic en el botón de editar (lípiz) para modificar datos</li>
                                 <li>Haz clic en el botón de eliminar (papelera) para remover un cliente</li>
                             </ul>
                         </div>
@@ -1521,7 +1612,7 @@
                                 <strong>Paso 1:</strong> Ve a Reportes
                             </div>
                             <div class="manual-step">
-                                <strong>Paso 2:</strong> Selecciona el tipo de reporte que necesitas
+                                <strong>Paso 2:</strong> Selecciona el tipo de reporte quée necesitas
                             </div>
                             <div class="manual-step">
                                 <strong>Paso 3:</strong> Establece los filtros (fecha, cliente, estado)
@@ -1533,7 +1624,7 @@
                             <h3>Descargar en PDF</h3>
                             <ul>
                                 <li>Una vez generado el reporte, haz clic en "Descargar PDF"</li>
-                                <li>El archivo se descargará a tu computadora automáticamente</li>
+                                <li>El archivo se descargarí a tu computadora automíticamente</li>
                                 <li>Puedes compartir o imprimir el PDF según sea necesario</li>
                             </ul>
 
@@ -1579,7 +1670,7 @@
                             <h3>Descargar manual</h3>
                             <ul>
                                 <li>Haz clic en el botón "Descargar Manual" en la barra superior</li>
-                                <li>El manual se descargará como PDF a tu computadora</li>
+                                <li>El manual se descargarí como PDF a tu computadora</li>
                                 <li>Puedes consultar el manual sin estar conectado</li>
                             </ul>
                         </div>
@@ -1590,7 +1681,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16" style="margin-right: 8px;">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                 </svg>
-                                Descargar como PDF
+                                Descargar Manual Completo
                             </button>
                         </div>
                     </div>
@@ -1669,7 +1760,7 @@
             const menuItem = document.getElementById(menuId);
             const sidebar = document.querySelector('.sidebar');
             
-            // Si el sidebar no está expandido, expandirlo primero
+            // Si el sidebar no estí expandido, expandirlo primero
             if (!sidebar.classList.contains('expanded')) {
                 sidebar.classList.add('expanded');
             }
@@ -1699,7 +1790,7 @@
                     menuItem.classList.add('active');
                 }
             } else {
-                // Fallback: activar según la sección cuando no hay evento (navegación programática)
+                // Fallback: activar según la sección cuando no hay evento (navegación programítica)
                 const link = document.querySelector(`.submenu a[href="#${section}"]`);
                 if (link) {
                     const submenuItem = link.closest('.submenu-item');
@@ -1722,6 +1813,27 @@
             const contentEl = document.getElementById(section + '-content');
             if (contentEl) {
                 contentEl.style.display = 'block';
+                try {
+                    contentEl.classList.remove('fade-in');
+                    void contentEl.offsetWidth; /* reflow para reiniciar animación */
+                    contentEl.classList.add('fade-in');
+                    // Animación escalonada de cards dentro de la sección activa
+                    const cards = Array.from(contentEl.querySelectorAll('.card'));
+                    cards.forEach((el, idx) => {
+                        el.classList.remove('fade-in');
+                        el.style.animationDelay = (idx * 40) + 'ms';
+                        void el.offsetWidth;
+                        el.classList.add('fade-in');
+                    });
+                    // Limpiar animaciones después de completar para preservar hover
+                    setTimeout(() => {
+                        contentEl.classList.remove('fade-in');
+                        cards.forEach(el => {
+                            el.classList.remove('fade-in');
+                            el.style.animationDelay = '';
+                        });
+                    }, 400 + (cards.length * 40));
+                } catch {}
             }
             
             // Actualizar título
@@ -1771,8 +1883,6 @@
                 initReportesFilters(); // para detallados cuando se abra la pestaña
                 loadReportesResumenDiario();
                 loadReportesResumenSemanal();
-                // Cargar tabla detallada inmediatamente al abrir Reportes
-                loadReportesView();
             } else if (section === 'inicio') {
                 // Inicializar resumen general cuando se visita Inicio explícitamente
                 initResumenGeneral();
@@ -1781,6 +1891,50 @@
                 console.error('Error en changeSection("'+section+'"):', err);
                 alert('Se produjo un error de script: ' + (err.message||err));
             }
+        }
+
+        // UI interactiva: selección de cards por relieve (una a la vez por contenedor)
+        function initSelectableCards() {
+            const containers = [
+                document.getElementById('resumen-general-charts')
+            ].filter(Boolean);
+
+            containers.forEach(container => {
+                container.addEventListener('click', (e) => {
+                    const card = e.target.closest('.card');
+                    if (!card || !container.contains(card)) return;
+                    if (card.classList.contains('is-selected')) {
+                        card.classList.remove('is-selected');
+                        return;
+                    }
+                    container.querySelectorAll('.card.is-selected').forEach(el => el.classList.remove('is-selected'));
+                    card.classList.add('is-selected');
+                });
+            });
+        }
+
+        // Refuerza contraste tipo "Reportes" en tarjetas clave del dashboard
+        function enhanceDashboardContrast() {
+            const accents = [
+                { id: 'card-promedio-diario', classes: ['accent-border-primary', 'shadow-sm'] },
+                { id: 'card-promedio-semanal', classes: ['accent-border-primary', 'shadow-sm'] },
+                { id: 'card-has-vendido', classes: ['accent-border-success', 'shadow-sm'] },
+                { id: 'card-evolucion-diaria', classes: [] },
+                { id: 'card-productos-pie', classes: [] },
+                { id: 'card-totales-obra', classes: [] },
+                { id: 'card-totales-globales', classes: [] }
+            ];
+            accents.forEach(({ id, classes }) => {
+                const wrap = document.getElementById(id);
+                if (!wrap) return;
+                const card = wrap.classList.contains('card') ? wrap : wrap.querySelector('.card');
+                if (!card) return;
+                classes.forEach(c => card.classList.add(c));
+                if (card.classList.contains('accent-border-primary')) {
+                    const header = card.querySelector('.card-header');
+                    if (header) header.classList.add('accent-header-primary');
+                }
+            });
         }
 
         // ===== Funciones del Manual de Usuario =====
@@ -1800,8 +1954,12 @@
         }
 
         function downloadManualPDF() {
-            // Esta función se completará cuando agregues la librería jsPDF
-            alert('La descarga en PDF estará disponible pronto. Por ahora, puedes usar Imprimir (Ctrl+P) y guardar como PDF.');
+            const link = document.createElement('a');
+            link.href = 'assets/manual/Manual_Usuario_Fintrack.pdf';
+            link.download = 'Manual_Usuario_FinTrack.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Agregar evento al botón Manual
@@ -1821,7 +1979,7 @@
             await loadAllDataFromBackend();
         });
 
-        // Inicio vacío: stub conservando getRegistros para otras funciones que lo usan
+        // Inicio vacío: stub conservando getRegistros para otras funciones quée lo usan
         function getRegistros() {
             try {
                 const raw = localStorage.getItem('registros');
@@ -1860,7 +2018,7 @@
             });
         }
 
-        // Normaliza y corrige pares inicio/fin (si están invertidos, los intercambia)
+        // Normaliza y corrige pares inicio/fin (si estín invertidos, los intercambia)
         function normalizeRangePair(idStart, idEnd) {
             const sEl = document.getElementById(idStart);
             const fEl = document.getElementById(idEnd);
@@ -1888,7 +2046,7 @@
             if (fEl && !fEl._guarded) { fEl.addEventListener('change', handler); fEl._guarded = true; }
         }
 
-        // Coloca valores iniciales coherentes (hoy y rangos recientes) para que los filtros tengan datos al cargar
+        // Coloca valores iniciales coherentes (hoy y rangos recientes) para quée los filtros tengan datos al cargar
         function setInitialDateRanges() {
             const today = new Date();
             const todayIso = today.toISOString().substring(0,10);
@@ -2123,15 +2281,28 @@
         function renderRgProductos(data, colors) {
             const ctx = document.getElementById('chart-rg-productos');
             if (!ctx) return;
-            let productosCobrados = 0; // cantidad de productos ya pagados
-            let productosPorCobrar = 0; // cantidad de productos con pendiente
+            let productosCobrados = 0;
+            let productosPorCobrar = 0;
+            
             data.forEach(r => {
-                // Si un item está pagado cuenta todos sus productos como cobrados.
-                (r.items||[]).forEach(it => {
-                    const itemTotalQty = (it.productos||[]).reduce((a,b)=>a + Number(b.cantidad||0),0);
-                    if (it.pagado) productosCobrados += itemTotalQty; else productosPorCobrar += itemTotalQty;
-                });
+                const totalCantidad = Number(r.totalCantidad || 0);
+                const totalPagado = Number(r.totalPagado || 0);
+                const totalCobrar = Number(r.totalCobrar || 0);
+                
+                // Si está totalmente pagado, todos los productos están cobrados
+                if (totalPagado >= totalCobrar) {
+                    productosCobrados += totalCantidad;
+                } else if (totalPagado > 0) {
+                    // Parcialmente pagado: calcular proporción
+                    const proporcionPagada = totalCobrar > 0 ? totalPagado / totalCobrar : 0;
+                    productosCobrados += Math.round(totalCantidad * proporcionPagada);
+                    productosPorCobrar += Math.round(totalCantidad * (1 - proporcionPagada));
+                } else {
+                    // No pagado
+                    productosPorCobrar += totalCantidad;
+                }
             });
+            
             const ds = {
                 labels: ['Cobrados','Por Cobrar'],
                 datasets: [{
@@ -2441,7 +2612,7 @@
             if (sidebar) sidebar.style.background = color;
             const avatar = document.querySelector('.user-avatar');
             if (avatar) avatar.style.background = color;
-            // Actualizar todos los botones primarios dinámicamente
+            // Actualizar todos los botones primarios dinímicamente
             document.querySelectorAll('.btn-primary').forEach(btn => {
                 btn.style.setProperty('--bs-btn-bg', color);
                 btn.style.setProperty('--bs-btn-border-color', color);
@@ -2449,7 +2620,7 @@
                 btn.style.borderColor = color;
             });
             
-            // Actualizar gráficos si están visibles
+            // Actualizar gríficos si estín visibles
             refreshChartsWithTheme();
         }
         function hexToRgb(hex) {
@@ -2543,7 +2714,7 @@
                     logoPreview.style.display = 'none';
                     logoInput.value = '';
                     logoRemoveBtn.style.display = 'none';
-                    // Si existía en prefs, lo quitaremos al guardar
+                    // Si existía en prefs, lo quéitaremos al guardar
                     showPrefsAlert('Logo eliminado (pendiente de guardar)', 'warning');
                 });
             }
@@ -2658,7 +2829,7 @@
             });
         }
 
-        // ===== GESTIÓN DE CLIENTES Y OBRAS =====
+        // ===== GESTI├ôN DE CLIENTES Y OBRAS =====
         
         // Datos cargados desde el backend
     let clientes = [];
@@ -2693,22 +2864,18 @@
             clientes = clientesData || [];
             obras = obrasData || [];
             productos = productosData || [];
-            registros = (registrosData || []).map(r => {
-                // Normalizar: asegurar que exista 'items' para edición/visualización
-                const items = r.items || r.detalles || [];
-                return { ...r, items };
-            });
+            registros = registrosData || [];
 
             console.log(`✓ Datos cargados: ${clientes.length} clientes, ${obras.length} obras, ${productos.length} productos, ${registros.length} registros`);
         } catch (error) {
             console.error('Error al cargar datos:', error);
-            alert('Error al cargar datos del servidor. Por favor, recarga la página.');
+            alert('Error al cargar datos del servidor. Por favor, recarga la pígina.');
             throw error;
         }
     }
 
 
-    // Normaliza fechas guardadas a ISO (AAAA-MM-DD) para que los filtros funcionen
+    // Normaliza fechas guardadas a ISO (AAAA-MM-DD) para quée los filtros funcionen
     (function normalizeStoredDates(){
         const toIso = (val) => {
             if (!val) return '';
@@ -2741,23 +2908,6 @@
     let originalReportesTheadHtml = '';
 
         // Cargar obras en los selectores
-        // Función para refrescar registros desde el backend
-        async function refreshRegistrosFromBackend() {
-            try {
-                const username = sessionStorage.getItem('username');
-                if (username && username !== 'demo') {
-                    const registrosData = await API.getRegistros();
-                    registros = (registrosData || []).map(r => {
-                        const items = r.items || r.detalles || [];
-                        return { ...r, items };
-                    });
-                    console.log('✓ Registros refrescados desde el backend:', registros.length, 'registros');
-                }
-            } catch (error) {
-                console.error('Error al refrescar registros:', error);
-            }
-        }
-
         function loadObrasSelect() {
             const selects = ['cliente-obra', 'edit-cliente-obra', 'filter-obra', 'add-clientes-obra', 'admin-cliente-obra', 'filter-reportes-obra'];
             // Agregar select de registros si existe
@@ -2818,12 +2968,6 @@
             const fFin = document.getElementById('filter-registros-fecha-fin');
             if (fObra && !fObra._bound) { fObra.addEventListener('change', loadRegistrosResumen); fObra._bound = true; }
             guardRange('filter-registros-fecha-inicio', 'filter-registros-fecha-fin', loadRegistrosResumen);
-            
-            // Refrescar registros desde el backend antes de mostrar
-            refreshRegistrosFromBackend().then(() => {
-                loadObrasSelect();
-                loadRegistrosResumen();
-            });
         }
 
         function loadRegistrosResumen() {
@@ -2918,7 +3062,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class='small text-muted'>${totalUds} productos registrados</div>
                         </div>
                     </div>`;
                 }).join('');
@@ -2974,7 +3117,7 @@
             guardRange('resumen-semanal-fecha-inicio', 'resumen-semanal-fecha-fin', loadReportesResumenSemanal);
 
             // Selector de vista de resumen
-            // Si existiera un selector de vista para esta pestaña, se ignorará por ahora (reubicado en Detallados)
+            // Si existiera un selector de vista para esta pestaña, se ignorarí por ahora (reubicado en Detallados)
         }
 
         // applyResumenViewMode ya no se usa en esta pestaña.
@@ -3013,7 +3156,7 @@
             updateChartSemanal(regs, ini, fin);
         }
 
-        // Gráficas con colores adaptados al tema
+        // Gríficas con colores adaptados al tema
         function getThemeColors() {
             // Obtener color primario del tema activo
             const primary = getComputedStyle(document.documentElement).getPropertyValue('--bs-primary').trim() || '#0d6efd';
@@ -3040,14 +3183,14 @@
         }
 
         function refreshChartsWithTheme() {
-            // Refrescar gráfico diario si existe
+            // Refrescar grífico diario si existe
             if (chartDiario && chartDiario.data && chartDiario.data.datasets.length > 0) {
                 const colors = getThemeColors();
                 chartDiario.data.datasets[0].backgroundColor = [colors.success, colors.warning];
                 chartDiario.update();
             }
             
-            // Refrescar gráfico semanal si existe
+            // Refrescar grífico semanal si existe
             if (chartSemanal && chartSemanal.data && chartSemanal.data.datasets.length > 0) {
                 const colors = getThemeColors();
                 chartSemanal.data.datasets[0].backgroundColor = colors.info;
@@ -3173,11 +3316,25 @@
             let totalCobrar=0,totalCobrado=0,totalPendiente=0; tbody.innerHTML='';
             // Modo General: listar cada registro (fecha más reciente arriba)
             if (detalladosResumenMode === 'general') {
+                // Actualizar encabezados para modo General (sin Cliente/Cédula)
+                const thead = document.querySelector('#reportes-table thead');
+                if (thead) {
+                    thead.innerHTML = `<tr>
+                        <th>Fecha</th>
+                        <th>Obra</th>
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">A Cobrar</th>
+                        <th class="text-end">Cobrado</th>
+                        <th class="text-end">Pendiente</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>`;
+                }
                 let regs = registros.slice();
                 if (obra) regs = regs.filter(r => r.obra === obra);
                 if (fi) regs = regs.filter(r => !r.fecha || r.fecha >= fi);
                 if (ff) regs = regs.filter(r => !r.fecha || r.fecha <= ff);
-                // Ordenar por fecha desc (YYYY-MM-DD lexicográfico funciona)
+                // Ordenar por fecha desc (YYYY-MM-DD lexicogrífico funciona)
                 regs.sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
                 currentReportesFiltered = regs.map(r => {
                     // Cliente y cédula: si múltiples clientes, concatenar nombres / cédulas
@@ -3211,14 +3368,12 @@
                     }[r.status] || { cls:'secondary', text:r.status };
                     tbody.innerHTML += `<tr>
                         <td>${r.fecha}</td>
-                        <td>${r.cliente}</td>
-                        <td>${r.cedula}</td>
                         <td>${r.obra}</td>
                         <td class='text-end'>${(r.totalCantidad||0).toFixed(2)}</td>
                         <td class='text-end'>${cobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
                         <td class='text-end text-success'>${pagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
                         <td class='text-end ${pendiente>0?'text-warning':''}'>${pendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
-                        <td><span class='badge bg-${statusCfg.cls}'>${statusCfg.text}</span></td>
+                        <td class='text-center'><span class='badge bg-${statusCfg.cls}'>${statusCfg.text}</span></td>
                         <td class='text-end'>
                             <button class='btn btn-outline-info btn-sm' title='Ver' onclick='viewRegistroDetalle(${r.id})'>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12c0 0 4.5-7.5 9.75-7.5S21.75 12 21.75 12 17.25 19.5 12 19.5 2.25 12 2.25 12z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" /></svg>
@@ -3227,7 +3382,7 @@
                     </tr>`;
                 });
             } else if (detalladosResumenMode === 'diario') {
-                // Pivot "Por Día": columnas dinámicas por cada fecha del rango (fi..ff) o fechas presentes si rango incompleto.
+                // Pivot "Por Día": columnas dinímicas por cada fecha del rango (fi..ff) o fechas presentes si rango incompleto.
                 pivotIsActive = true;
                 let regs = registros.filter(r => r.fecha);
                 if (obra) regs = regs.filter(r => r.obra === obra);
@@ -3243,8 +3398,8 @@
                     }
                     pivotDayList = days; // ya ascendente
                 } else {
-                    const unique = new Set(); regs.forEach(r => unique.add(r.fecha));
-                    pivotDayList = Array.from(unique).sort((a,b)=> a.localeCompare(b)); // ascendente
+                    const uniquée = new Set(); regs.forEach(r => uniquée.add(r.fecha));
+                    pivotDayList = Array.from(uniquée).sort((a,b)=> a.localeCompare(b)); // ascendente
                 }
                 // Guardar encabezado original si aún no
                 if (!originalReportesTheadHtml) {
@@ -3254,7 +3409,7 @@
                 // Construir encabezado pivot
                 const thead = document.querySelector('#reportes-table thead');
                 if (thead) {
-                    const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                    const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Síbado'];
                     let headHtml = '<tr><th>Obra</th><th>Clientes</th>';
                     pivotDayList.forEach(d => {
                         const dateObj = new Date(d+'T00:00:00');
@@ -3311,6 +3466,18 @@
                 // Ajustar totales superiores (usamos cobrar/cobrado estimados)
                 totalPendiente = totalCobrar - totalCobrado;
             } else if (detalladosResumenMode === 'detallado') {
+                // Restaurar encabezados completos para modo Detallado
+                const thead = document.querySelector('#reportes-table thead');
+                if (thead && originalReportesTheadHtml) {
+                    thead.innerHTML = originalReportesTheadHtml;
+                    // Centrar Estado
+                    const ths = thead.querySelectorAll('th');
+                    ths.forEach((th, idx) => {
+                        if (th.textContent.trim() === 'Estado') {
+                            th.className = 'text-center';
+                        }
+                    });
+                }
                 // Modo Detallado: una fila por cliente y fecha (si múltiples clientes en un registro, dividir montos por igual)
                 let regs = registros.slice();
                 if (obra) regs = regs.filter(r => r.obra === obra);
@@ -3369,7 +3536,7 @@
                         <td class='text-end'>${cobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
                         <td class='text-end text-success'>${pagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
                         <td class='text-end ${pendiente>0?'text-warning':''}'>${pendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
-                        <td><span class='badge bg-${statusCfg.cls}'>${statusCfg.text}</span></td>
+                        <td class='text-center'><span class='badge bg-${statusCfg.cls}'>${statusCfg.text}</span></td>
                         <td class='text-end'>
                             <button class='btn btn-outline-info btn-sm' title='Ver' onclick='viewRegistroDetalle(${r.id})'>
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12c0 0 4.5-7.5 9.75-7.5S21.75 12 21.75 12 17.25 19.5 12 19.5 2.25 12 2.25 12z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" /></svg>
@@ -3416,15 +3583,29 @@
                 return;
             }
             const wb = XLSX.utils.book_new();
+            const username = document.getElementById('current-username')?.value || 'Usuario';
+            const fIni = document.getElementById('filter-reportes-fecha-inicio')?.value || '';
+            const fFin = document.getElementById('filter-reportes-fecha-fin')?.value || '';
+            const formatDate = (d) => d ? d.split('-').reverse().join('-').replace(/^(\d{2})-(\d{2})-(\d{4})$/, (_,dd,mm,yyyy)=> dd+'-'+mm+'-'+yyyy) : '';
+            const fechasText = `Desde ${formatDate(fIni)} hasta ${formatDate(fFin)}`;
+            
             // Modo Por Día (pivot)
             if (detalladosResumenMode === 'diario' && pivotDayList && pivotDayList.length) {
-                const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Síbado'];
+                const ws_data = [];
+                // Encabezados profesionales
+                ws_data.push([username]);
+                ws_data.push(['Reporte Por Día de Ventas']);
+                ws_data.push([fechasText]);
+                ws_data.push([]);
+                
                 const headers = ['Obra', 'Clientes', ...pivotDayList.map(d => {
                     const dateObj = new Date(d+'T00:00:00');
                     const label = diasSemana[dateObj.getDay()] + ' ' + d.split('-').reverse().join('-').replace(/^(\d{2})-(\d{2})-(\d{4})$/, (_,dd,mm,yyyy)=> dd+'-'+mm+'-'+yyyy.substring(2));
                     return label;
                 }), 'Total'];
-                const ws_data = [headers];
+                ws_data.push(headers);
+                
                 const dayTotals = Array(pivotDayList.length).fill(0);
                 let grandTotal = 0;
                 (pivotRows && pivotRows.length ? pivotRows : currentReportesFiltered).forEach(rw => {
@@ -3443,68 +3624,234 @@
                 // Totals row
                 ws_data.push(['', 'Total por Día', ...dayTotals, grandTotal]);
                 const ws = XLSX.utils.aoa_to_sheet(ws_data);
-                // Column widths: first two wider, days moderate, total moderate
+                // Aplicar estilos: encabezados en negrita
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let C = 0; C <= range.e.c; ++C) {
+                    ws[XLSX.utils.encode_cell({r:0,c:C})].font = {bold:true, size:12};
+                    ws[XLSX.utils.encode_cell({r:1,c:C})].font = {bold:true, size:18};
+                    ws[XLSX.utils.encode_cell({r:2,c:C})].font = {bold:true, size:12};
+                }
+                // Encabezados de tabla en negrita
+                for (let C = 0; C <= range.e.c; ++C) {
+                    ws[XLSX.utils.encode_cell({r:4,c:C})].font = {bold:true};
+                }
+                // Column widths
                 const cols = [{wch:22},{wch:22}, ...pivotDayList.map(()=>({wch:14})), {wch:16}];
                 ws['!cols'] = cols;
                 // Apply currency format to day and total columns (from index 2 to end)
-                const range = XLSX.utils.decode_range(ws['!ref']);
-                for (let R = 1; R <= range.e.r; ++R) {
+                for (let R = 5; R <= range.e.r; ++R) {
                     for (let C = 2; C <= range.e.c; ++C) {
                         const addr = XLSX.utils.encode_cell({ r:R, c:C });
                         if (ws[addr] && typeof ws[addr].v === 'number') ws[addr].z = '$#,##0.00';
                     }
                 }
-                XLSX.utils.book_append_sheet(wb, ws, 'Reportes Por Día');
+                XLSX.utils.book_append_sheet(wb, ws, 'Por Día');
                 XLSX.writeFile(wb, `reportes_por_dia_${new Date().toISOString().split('T')[0]}.xlsx`);
                 return;
             }
 
-            // Modos General / Detallado (tabla fija)
-            const headers = ['Fecha', 'Cliente', 'Cédula', 'Obra', 'Cantidad', 'A Cobrar', 'Cobrado', 'Pendiente', 'Estado'];
+            // Modos General / Detallado
+            const isGeneral = detalladosResumenMode === 'general';
+            const modoName = isGeneral ? 'General' : 'Detallado';
+            const headers = isGeneral 
+                ? ['Fecha', 'Obra', 'Cantidad', 'A Cobrar', 'Cobrado', 'Pendiente', 'Estado']
+                : ['Fecha', 'Cliente', 'Cédula', 'Obra', 'Cantidad', 'A Cobrar', 'Cobrado', 'Pendiente', 'Estado'];
+            
+            const ws_data = [];
+            ws_data.push([username]);
+            ws_data.push([`Reporte ${modoName} de Ventas`]);
+            ws_data.push([fechasText]);
+            ws_data.push([]);
+            ws_data.push(headers);
+            
             let sumCobrar=0,sumCobrado=0,sumPendiente=0;
-            const data = currentReportesFiltered.map(r => {
+            currentReportesFiltered.forEach(r => {
                 const cobrar = Number(r.totalCobrar || 0);
                 const pagado = Number(r.totalPagado || 0);
                 const pendiente = cobrar - pagado;
                 sumCobrar += cobrar; sumCobrado += pagado; sumPendiente += pendiente;
                 const estado = (r.status || (pagado >= cobrar && cobrar>0? 'pagado' : (pagado>0? 'parcial' : 'pendiente')));
-                return [
-                    r.fecha || '',
-                    r.cliente || '',
-                    r.cedula || '',
-                    r.obra || '',
-                    Number(r.totalCantidad||0),
-                    cobrar,
-                    pagado,
-                    pendiente,
-                    estado
-                ];
+                
+                if (isGeneral) {
+                    ws_data.push([
+                        r.fecha || '',
+                        r.obra || '',
+                        Number(r.totalCantidad||0),
+                        cobrar,
+                        pagado,
+                        pendiente,
+                        estado
+                    ]);
+                } else {
+                    ws_data.push([
+                        r.fecha || '',
+                        r.cliente || '',
+                        r.cedula || '',
+                        r.obra || '',
+                        Number(r.totalCantidad||0),
+                        cobrar,
+                        pagado,
+                        pendiente,
+                        estado
+                    ]);
+                }
             });
-            const ws_data = [headers, ...data];
-            // Agregar fila de totales (antes de estilos para incluir formato)
-            ws_data.push(['', '', '', 'TOTALES:', '', sumCobrar, sumCobrado, sumPendiente, '']);
+            
+            // Agregar fila de totales
+            if (isGeneral) {
+                ws_data.push(['', 'TOTALES:', '', sumCobrar, sumCobrado, sumPendiente, '']);
+            } else {
+                ws_data.push(['', '', '', 'TOTALES:', '', sumCobrar, sumCobrado, sumPendiente, '']);
+            }
+            
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            // Ajustar anchos de columnas
-            ws['!cols'] = [
-                { wch: 16 },
-                { wch: 22 },
-                { wch: 16 },
-                { wch: 22 },
-                { wch: 12 },
-                { wch: 16 },
-                { wch: 16 },
-                { wch: 16 },
-                { wch: 12 }
-            ];
+            
+            // Aplicar estilos
             const range = XLSX.utils.decode_range(ws['!ref']);
-            for (let R = range.s.r + 1; R <= range.e.r; ++R) { // saltar encabezado
-                for (let C = 5; C <= 7; ++C) {
-                    const addr = XLSX.utils.encode_cell({ r:R, c:C });
-                    if (ws[addr] && typeof ws[addr].v === 'number') ws[addr].z = '$#,##0.00';
+            // Encabezados profesionales en negrita
+            for (let C = 0; C <= range.e.c; ++C) {
+                const r0 = XLSX.utils.encode_cell({r:0,c:C});
+                const r1 = XLSX.utils.encode_cell({r:1,c:C});
+                const r2 = XLSX.utils.encode_cell({r:2,c:C});
+                if (ws[r0]) ws[r0].font = {bold:true, size:12};
+                if (ws[r1]) ws[r1].font = {bold:true, size:18};
+                if (ws[r2]) ws[r2].font = {bold:true, size:12};
+            }
+            // Encabezados de tabla en negrita
+            for (let C = 0; C < headers.length; ++C) {
+                const addr = XLSX.utils.encode_cell({r:4,c:C});
+                if (ws[addr]) ws[addr].font = {bold:true};
+            }
+            
+            // Column widths
+            if (isGeneral) {
+                ws['!cols'] = [{wch:16},{wch:22},{wch:12},{wch:16},{wch:16},{wch:16},{wch:12}];
+                // Formato moneda General
+                for (let R = 5; R < ws_data.length - 1; ++R) {
+                    for (let C = 3; C <= 5; ++C) {
+                        const addr = XLSX.utils.encode_cell({r:R,c:C});
+                        if (ws[addr] && typeof ws[addr].v === 'number') ws[addr].z = '$#,##0.00';
+                    }
+                }
+            } else {
+                ws['!cols'] = [{wch:16},{wch:22},{wch:16},{wch:22},{wch:12},{wch:16},{wch:16},{wch:16},{wch:12}];
+                // Formato moneda Detallado
+                for (let R = 5; R < ws_data.length - 1; ++R) {
+                    for (let C = 5; C <= 7; ++C) {
+                        const addr = XLSX.utils.encode_cell({r:R,c:C});
+                        if (ws[addr] && typeof ws[addr].v === 'number') ws[addr].z = '$#,##0.00';
+                    }
                 }
             }
-            XLSX.utils.book_append_sheet(wb, ws, 'Reportes Detallados');
-            XLSX.writeFile(wb, `reportes_detallados_${new Date().toISOString().split('T')[0]}.xlsx`);
+            
+            XLSX.utils.book_append_sheet(wb, ws, modoName);
+            XLSX.writeFile(wb, `reportes_${modoName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        // Exportar Excel con Estilos Profesionales (Backend OpenPyXL)
+        async function exportReportesExcelPro() {
+            if (!currentReportesFiltered || currentReportesFiltered.length === 0) {
+                alert('No hay datos para exportar.');
+                return;
+            }
+            
+            try {
+                const username = document.getElementById('current-username')?.value || 'Usuario';
+                const fIni = document.getElementById('filter-reportes-fecha-inicio')?.value || '';
+                const fFin = document.getElementById('filter-reportes-fecha-fin')?.value || '';
+                const formatDate = (d) => d ? d.split('-').reverse().join('-') : '';
+                const fechasText = `Desde ${formatDate(fIni)} hasta ${formatDate(fFin)}`;
+                
+                let mode, title, headers, rows, currency_cols, totals;
+                
+                // Modo Por Día (pivot)
+                if (detalladosResumenMode === 'diario' && pivotDayList && pivotDayList.length) {
+                    mode = 'diario';
+                    title = 'Reporte Por Día de Ventas';
+                    const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                    headers = ['Obra', 'Clientes', ...pivotDayList.map(d => {
+                        const dateObj = new Date(d+'T00:00:00');
+                        return diasSemana[dateObj.getDay()] + ' ' + formatDate(d);
+                    }), 'Total'];
+                    
+                    rows = [];
+                    const dayTotals = Array(pivotDayList.length).fill(0);
+                    let grandTotal = 0;
+                    
+                    (pivotRows && pivotRows.length ? pivotRows : currentReportesFiltered).forEach(rw => {
+                        const row = [rw.obra || '', rw.cliente || ''];
+                        let rowTotal = 0;
+                        pivotDayList.forEach((d,i) => {
+                            const v = Number((rw.porDia && rw.porDia[d]) || 0);
+                            row.push(v);
+                            dayTotals[i] += v;
+                            rowTotal += v;
+                        });
+                        row.push(rowTotal);
+                        grandTotal += rowTotal;
+                        rows.push(row);
+                    });
+                    
+                    totals = ['', 'Total por Día', ...dayTotals, grandTotal];
+                    currency_cols = Array.from({length: pivotDayList.length + 1}, (_, i) => i + 2); // Columnas desde la 3ra
+                    
+                } else {
+                    // Modos General / Detallado
+                    const isGeneral = detalladosResumenMode === 'general';
+                    mode = isGeneral ? 'general' : 'detallado';
+                    title = `Reporte ${isGeneral ? 'General' : 'Detallado'} de Ventas`;
+                    headers = isGeneral 
+                        ? ['Fecha', 'Obra', 'Cantidad', 'A Cobrar', 'Cobrado', 'Pendiente', 'Estado']
+                        : ['Fecha', 'Cliente', 'Cédula', 'Obra', 'Cantidad', 'A Cobrar', 'Cobrado', 'Pendiente', 'Estado'];
+                    
+                    rows = [];
+                    let sumCobrar=0, sumCobrado=0, sumPendiente=0;
+                    
+                    currentReportesFiltered.forEach(r => {
+                        const cobrar = Number(r.totalCobrar || 0);
+                        const pagado = Number(r.totalPagado || 0);
+                        const pendiente = cobrar - pagado;
+                        sumCobrar += cobrar; sumCobrado += pagado; sumPendiente += pendiente;
+                        const estado = (r.status || (pagado >= cobrar && cobrar>0? 'pagado' : (pagado>0? 'parcial' : 'pendiente')));
+                        
+                        if (isGeneral) {
+                            rows.push([r.fecha || '', r.obra || '', Number(r.totalCantidad||0), cobrar, pagado, pendiente, estado]);
+                        } else {
+                            rows.push([r.fecha || '', r.cliente || '', r.cedula || '', r.obra || '', Number(r.totalCantidad||0), cobrar, pagado, pendiente, estado]);
+                        }
+                    });
+                    
+                    totals = isGeneral 
+                        ? ['', 'TOTALES:', '', sumCobrar, sumCobrado, sumPendiente, '']
+                        : ['', '', '', 'TOTALES:', '', sumCobrar, sumCobrado, sumPendiente, ''];
+                    
+                    currency_cols = isGeneral ? [3, 4, 5] : [5, 6, 7];
+                }
+                
+                // Enviar al backend
+                const response = await fetch('/api/reportes/export-excel', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, title, date_range: fechasText, mode, headers, rows, currency_cols, totals })
+                });
+                
+                if (!response.ok) throw new Error('Error al generar Excel');
+                
+                // Descargar archivo
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `reportes_${mode}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+            } catch (error) {
+                console.error('Error exportando Excel:', error);
+                alert('Error al exportar. Por favor intenta de nuevo.');
+            }
         }
 
         // Exportar PDF (simple usando ventana y print)
@@ -3514,12 +3861,38 @@
                 return;
             }
             const win = window.open('', '_blank');
-            const css = `<style>body{font-family:Arial,sans-serif;font-size:12px;margin:16px;} .pdf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px} .pdf-logo{max-height:48px;max-width:160px} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:4px;} th{background:#f5f5f5;} .text-end{text-align:right;} .text-start{text-align:left;} .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;color:#fff;} .bg-success{background:#198754;} .bg-warning{background:#ffc107;color:#000;} .bg-danger{background:#dc3545;} .bg-secondary{background:#6c757d;}</style>`;
+            const css = `<style>
+                body{font-family:Arial,sans-serif;font-size:12px;margin:16px;}
+                .pdf-header{text-align:center;margin-bottom:20px;position:relative;}
+                .pdf-logo{position:absolute;top:0;right:0;max-height:60px;max-width:120px;}
+                .pdf-usuario{font-size:12px;font-weight:bold;margin-bottom:10px}
+                .pdf-titulo{font-size:18px;font-weight:bold;margin-bottom:10px}
+                .pdf-fechas{font-size:12px;font-weight:bold;margin-bottom:15px}
+                table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif}
+                th,td{border:1px solid #ccc;padding:6px;font-size:11px}
+                th{background:#f5f5f5;font-weight:bold}
+                .text-end{text-align:right}
+                .text-center{text-align:center}
+                .text-start{text-align:left}
+                .badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;color:#fff}
+                .bg-success{background:#198754}
+                .bg-warning{background:#ffc107;color:#000}
+                .bg-danger{background:#dc3545}
+                .bg-secondary{background:#6c757d}
+                .total-row{background:#f0f0f0;font-weight:bold}
+            </style>`;
+            
+            const username = document.getElementById('current-username')?.value || 'Usuario';
+            const fIni = document.getElementById('filter-reportes-fecha-inicio')?.value || '';
+            const fFin = document.getElementById('filter-reportes-fecha-fin')?.value || '';
+            const formatDate = (d) => d ? d.split('-').reverse().join('-').replace(/^(\d{2})-(\d{2})-(\d{4})$/, (_,dd,mm,yyyy)=> dd+'-'+mm+'-'+yyyy) : '';
+            const fechasText = `Desde ${formatDate(fIni)} hasta ${formatDate(fFin)}`;
             const prefs = (typeof getPrefs === 'function') ? getPrefs() : {};
             const logoHtml = prefs && prefs.businessLogo ? `<img class="pdf-logo" src="${prefs.businessLogo}" />` : '';
+            
             if (detalladosResumenMode === 'diario' && pivotDayList && pivotDayList.length) {
                 // Pivot PDF
-                const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Síbado'];
                 let headHtml = '<tr><th>Obra</th><th>Clientes</th>';
                 pivotDayList.forEach(d => {
                     const dateObj = new Date(d+'T00:00:00');
@@ -3527,6 +3900,14 @@
                     headHtml += `<th class='text-end'>${label}</th>`;
                 });
                 headHtml += `<th class='text-end'>Total</th></tr>`;
+                
+                const header = `<div class='pdf-header'>
+                    <img class='pdf-logo' src='/assets/manual/logo-small.png' alt='Logo'>
+                    <div class='pdf-usuario'>${username}</div>
+                    <div class='pdf-titulo'>Reporte Por Día de Ventas</div>
+                    <div class='pdf-fechas'>${fechasText}</div>
+                </div>`;
+                
                 let body = `<table><thead>${headHtml}</thead><tbody>`;
                 const rows = (pivotRows && pivotRows.length) ? pivotRows : currentReportesFiltered;
                 const dayTotals = Array(pivotDayList.length).fill(0);
@@ -3543,11 +3924,11 @@
                     body += `<td class='text-end'><strong>${rowTotal.toLocaleString('en-US',{style:'currency',currency:'USD'})}</strong></td></tr>`;
                 });
                 // Totals row
-                body += `<tr class='table-active'><td colspan='2' class='text-end'><strong>Total por Día</strong></td>`;
-                dayTotals.forEach(v => body += `<td class='text-end'><strong>${v.toLocaleString('en-US',{style:'currency',currency:'USD'})}</strong></td>`);
-                body += `<td class='text-end'><strong>${grandTotal.toLocaleString('en-US',{style:'currency',currency:'USD'})}</strong></td></tr>`;
+                body += `<tr class='total-row'><td colspan='2' class='text-end'>Total por Día</td>`;
+                dayTotals.forEach(v => body += `<td class='text-end'>${v.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>`);
+                body += `<td class='text-end'>${grandTotal.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td></tr>`;
                 body += '</tbody></table>';
-                const header = `<div class='pdf-header'><h3 style='margin:0'>Reporte Por Día</h3>${logoHtml}</div>`;
+                
                 win.document.write(`<!DOCTYPE html><html><head><title>Reporte Por Día</title>${css}</head><body>${header}${body}</body></html>`);
                 win.document.close();
                 setTimeout(()=>{ try { win.focus(); win.print(); } catch {} }, 250);
@@ -3555,29 +3936,83 @@
             }
 
             // General / Detallado PDF
-            let html = `<!DOCTYPE html><html><head><title>Reporte</title>${css}</head><body><div class='pdf-header'><h3 style='margin:0'>Reporte Detallado</h3>${logoHtml}</div>`;
-            let body = '<table><thead><tr><th>Fecha</th><th>Cliente</th><th>Cédula</th><th>Obra</th><th>Cantidad</th><th>A Cobrar</th><th>Cobrado</th><th>Pendiente</th><th>Estado</th></tr></thead><tbody>';
+            const isGeneral = detalladosResumenMode === 'general';
+            const modoName = isGeneral ? 'General' : 'Detallado';
+            
+            const header = `<div class='pdf-header'>
+                <img class='pdf-logo' src='/assets/manual/logo-small.png' alt='Logo'>
+                <div class='pdf-usuario'>${username}</div>
+                <div class='pdf-titulo'>Reporte ${modoName} de Ventas</div>
+                <div class='pdf-fechas'>${fechasText}</div>
+            </div>`;
+            
+            let headHtml = '<tr>';
+            if (isGeneral) {
+                headHtml += '<th>Fecha</th><th>Obra</th><th class="text-end">Cantidad</th><th class="text-end">A Cobrar</th><th class="text-end">Cobrado</th><th class="text-end">Pendiente</th><th class="text-center">Estado</th>';
+            } else {
+                headHtml += '<th>Fecha</th><th>Cliente</th><th>Cédula</th><th>Obra</th><th class="text-end">Cantidad</th><th class="text-end">A Cobrar</th><th class="text-end">Cobrado</th><th class="text-end">Pendiente</th><th class="text-center">Estado</th>';
+            }
+            headHtml += '</tr>';
+            
+            let body = `<table><thead>${headHtml}</thead><tbody>`;
+            let sumCobrar=0, sumCobrado=0, sumPendiente=0;
+            
             currentReportesFiltered.forEach(r => {
                 const cobrar = Number(r.totalCobrar||0);
                 const pagado = Number(r.totalPagado||0);
                 const pendiente = cobrar - pagado;
+                sumCobrar += cobrar; sumCobrado += pagado; sumPendiente += pendiente;
                 const estado = (r.status || (pagado >= cobrar && cobrar>0? 'pagado' : (pagado>0? 'parcial' : 'pendiente')));
                 const estadoCls = estado==='pagado'?'success':(estado==='parcial'?'warning':(estado==='pendiente'?'danger':'secondary'));
-                body += `<tr>
-                    <td class='text-start'>${r.fecha||''}</td>
-                    <td class='text-start'>${r.cliente||''}</td>
-                    <td class='text-start'>${r.cedula||''}</td>
-                    <td class='text-start'>${r.obra||''}</td>
-                    <td class='text-end'>${(r.totalCantidad||0).toFixed(2)}</td>
-                    <td class='text-end'>${cobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
-                    <td class='text-end'>${pagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
-                    <td class='text-end'>${pendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
-                    <td class='text-start'><span class='badge bg-${estadoCls}'>${estado}</span></td>
-                </tr>`;
+                
+                if (isGeneral) {
+                    body += `<tr>
+                        <td class='text-start'>${r.fecha||''}</td>
+                        <td class='text-start'>${r.obra||''}</td>
+                        <td class='text-end'>${(r.totalCantidad||0).toFixed(2)}</td>
+                        <td class='text-end'>${cobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                        <td class='text-end'>${pagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                        <td class='text-end'>${pendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                        <td class='text-center'><span class='badge bg-${estadoCls}'>${estado}</span></td>
+                    </tr>`;
+                } else {
+                    body += `<tr>
+                        <td class='text-start'>${r.fecha||''}</td>
+                        <td class='text-start'>${r.cliente||''}</td>
+                        <td class='text-start'>${r.cedula||''}</td>
+                        <td class='text-start'>${r.obra||''}</td>
+                        <td class='text-end'>${(r.totalCantidad||0).toFixed(2)}</td>
+                        <td class='text-end'>${cobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                        <td class='text-end'>${pagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                        <td class='text-end'>${pendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                        <td class='text-center'><span class='badge bg-${estadoCls}'>${estado}</span></td>
+                    </tr>`;
+                }
             });
+            
+            // Totals row
+            if (isGeneral) {
+                body += `<tr class='total-row'>
+                    <td colspan='3' class='text-end'>TOTALES:</td>
+                    <td class='text-end'>${sumCobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                    <td class='text-end'>${sumCobrado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                    <td class='text-end'>${sumPendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                    <td></td>
+                </tr>`;
+            } else {
+                body += `<tr class='total-row'>
+                    <td colspan='4' class='text-end'>TOTALES:</td>
+                    <td colspan='1'></td>
+                    <td class='text-end'>${sumCobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                    <td class='text-end'>${sumCobrado.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                    <td class='text-end'>${sumPendiente.toLocaleString('en-US',{style:'currency',currency:'USD'})}</td>
+                    <td></td>
+                </tr>`;
+            }
             body += '</tbody></table>';
-            const totalsHtml = `<p><strong>Total A Cobrar:</strong> ${document.getElementById('reportes-total-cobrar').textContent} | <strong>Total Cobrado:</strong> ${document.getElementById('reportes-total-cobrado').textContent} | <strong>Total Pendiente:</strong> ${document.getElementById('reportes-total-pendiente').textContent}</p>`;
-            win.document.write(html + totalsHtml + body + '</body></html>');
+            
+            const html = `<!DOCTYPE html><html><head><title>Reporte ${modoName}</title>${css}</head><body>${header}${body}</body></html>`;
+            win.document.write(html);
             win.document.close();
             setTimeout(()=>{ try { win.focus(); win.print(); } catch {} }, 250);
         }
@@ -3619,7 +4054,6 @@
             if (currentEditRegistroId) {
                 const reg = registros.find(r => r.id === currentEditRegistroId);
                 if (reg) {
-                    console.log('📝 Editando registro:', reg);
                     if (fechaInput) fechaInput.value = reg.fecha || today;
                     if (reg.tipo === 'adicional') {
                         if (obraSel) obraSel.value = '__ADICIONAL__';
@@ -3628,27 +4062,19 @@
                         if (obraSel) obraSel.value = reg.obra || '';
                         if (reg.obra) renderRegistroTableInline(reg.obra);
                     }
-                    // Mayor delay para asegurar que renderRegistro* haya creado los elementos del DOM
                     setTimeout(() => {
-                        const items = reg.items || reg.detalles || [];
-                        console.log('📋 Items a cargar:', items);
-                        items.forEach(item => {
-                            const clienteId = item.clienteId || item.id;
-                            console.log('👤 Procesando item:', clienteId, item);
+                        (reg.items || []).forEach(item => {
                             (item.productos || []).forEach(prod => {
-                                const chk = document.getElementById(`rp-${clienteId}-${prod.productoId}`);
-                                const qty = document.getElementById(`rq-${clienteId}-${prod.productoId}`);
-                                console.log(`  🛍️ Producto ${prod.nombre} (${prod.productoId}): chk=${!!chk}, qty=${!!qty}`);
+                                const chk = document.getElementById(`rp-${item.clienteId}-${prod.productoId}`);
+                                const qty = document.getElementById(`rq-${item.clienteId}-${prod.productoId}`);
                                 if (chk) chk.checked = true;
                                 if (qty) { qty.disabled = false; qty.value = String(prod.cantidad || 0); }
                             });
-                            const paidChk = document.querySelector(`[data-paid-for="${clienteId}"]`);
-                            console.log(`  💰 Checkbox pagado: ${!!paidChk}`);
+                            const paidChk = document.querySelector(`[data-paid-for="${item.clienteId}"]`);
                             if (paidChk) paidChk.checked = !!item.pagado;
                         });
                         recalcRegistroTotals();
-                        console.log('✓ Totales recalculados');
-                    }, 300);
+                    }, 120);
                 }
             }
         }
@@ -3831,7 +4257,7 @@
                 return;
             }
 
-            // Construir tabla dinámica para un solo cliente (adicional)
+            // Construir tabla dinímica para un solo cliente (adicional)
             const cid = 'adicional'; // ID único para cliente adicional
             let thead = `<thead class="table-light"><tr><th>Cliente</th>`;
             productos.forEach(p => {
@@ -3861,7 +4287,7 @@
             recalcRegistroTotals();
         }
 
-        async function saveRegistro() {
+        function saveRegistro() {
             // Detectar modo basado en el select de obra (incluye opción especial __ADICIONAL__)
             const fecha = document.getElementById('registro-fecha')?.value || '';
             const obraVal = document.getElementById('registro-obra')?.value || '';
@@ -3937,40 +4363,17 @@
                 totalPagado,
                 status,
                 titulo: `Registro ${obra}${fecha ? ' - ' + fecha : ''}`,
-                resumen: `${totalCantidad} uds • A cobrar: ${totalCobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})} • Pagado: ${totalPagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}`
+                resumen: `${totalCantidad} uds ÔÇó A cobrar: ${totalCobrar.toLocaleString('en-US',{style:'currency',currency:'USD'})} ÔÇó Pagado: ${totalPagado.toLocaleString('en-US',{style:'currency',currency:'USD'})}`
             };
-            
-            // Guardar en backend
-            try {
-                if (currentEditRegistroId) {
-                    // Actualizar registro existente
-                    await API.updateRegistro(currentEditRegistroId, rec);
-                } else {
-                    // Crear nuevo registro
-                    const result = await API.createRegistro(rec);
-                    rec.id = result.id; // Usar el ID del backend
-                }
-                
-                // Actualizar array local
-                const idx = registros.findIndex(r => r.id === rec.id);
-                if (idx >= 0) registros[idx] = rec; else registros.push(rec);
-            } catch (error) {
-                console.error('Error al guardar registro:', error);
-                showRegistroAddAlert('Error al guardar el registro en el servidor: ' + error.message, 'danger');
-                return;
-            }
+            const idx = registros.findIndex(r => r.id === rec.id);
+            if (idx >= 0) registros[idx] = rec; else registros.push(rec);
+            localStorage.setItem('registros', JSON.stringify(registros));
             showRegistroAddAlert('Registro guardado correctamente.', 'success');
-            // Navegar a resumen y refrescar vistas que dependen de registros
-            setTimeout(async () => {
+            // Navegar a resumen
+            setTimeout(() => {
                 currentEditRegistroId = null;
-                // Refrescar registros desde el backend para sincronización
-                await refreshRegistrosFromBackend();
                 changeSection('registros-resumen');
                 loadRegistrosResumen();
-                // Refrescar reportes para que el nuevo/actualizado registro se vea sin recargar
-                loadReportesResumenDiario();
-                loadReportesResumenSemanal();
-                loadReportesView();
             }, 400);
         }
 
@@ -3985,77 +4388,24 @@
 
         // Editar un registro desde el resumen
         function editRegistro(id) {
-            try { console.log('Editando registro', id); } catch {}
-            
-            // Buscar el registro
-            const registro = registros.find(r => r.id === id);
-            if (!registro) {
-                alert('Registro no encontrado');
-                return;
-            }
-            
-            // Guardar ID para modo edición
             currentEditRegistroId = id;
             
             // Cambiar título
             const title = document.getElementById('registro-add-title');
             if (title) title.textContent = 'Editar Registro';
             
-            // Cambiar a la sección
-            changeSection('registros-add');
+            // Asegurar modo edición (sin readonly)
+            setTimeout(() => setReadonlyMode(false), 200);
             
-            // Cargar los datos del registro
-            setTimeout(() => {
-                // Establecer fecha y obra
-                const fechaInput = document.getElementById('registro-fecha');
-                if (fechaInput) fechaInput.value = registro.fecha || '';
-                
-                const obraSelect = document.getElementById('registro-obra');
-                if (obraSelect) {
-                    obraSelect.value = registro.obra || '';
-                    // Renderizar tabla con los clientes
-                    if (registro.tipo !== 'adicional') {
-                        renderRegistroTableInline(registro.obra);
-                    } else {
-                        renderRegistroAdicionalInline(registro.items?.[0]?.clienteNombre || 'Adicionales');
-                    }
-                }
-                
-                // Cargar items
-                setTimeout(() => {
-                    (registro.items || []).forEach(item => {
-                        (item.productos || []).forEach(prod => {
-                            const chk = document.getElementById(`rp-${item.clienteId}-${prod.productoId}`);
-                            const qty = document.getElementById(`rq-${item.clienteId}-${prod.productoId}`);
-                            if (chk) chk.checked = true;
-                            if (qty) { qty.disabled = false; qty.value = String(prod.cantidad || 0); }
-                        });
-                        const paidChk = document.querySelector(`[data-paid-for="${item.clienteId}"]`);
-                        if (paidChk) paidChk.checked = !!item.pagado;
-                    });
-                    recalcRegistroTotals();
-                }, 200);
-                
-                // Asegurar modo edición (sin readonly)
-                setReadonlyMode(false);
-            }, 150);
+            changeSection('registros-add');
         }
 
         // Eliminar un registro
-        async function deleteRegistro(id) {
+        function deleteRegistro(id) {
             if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
-            
-            try {
-                // Eliminar del backend
-                await API.deleteRegistro(id);
-                
-                // Refrescar registros desde el backend
-                await refreshRegistrosFromBackend();
-                loadRegistrosResumen();
-            } catch (error) {
-                console.error('Error al eliminar registro:', error);
-                alert('Error al eliminar el registro del servidor: ' + error.message);
-            }
+            registros = registros.filter(r => r.id !== id);
+            localStorage.setItem('registros', JSON.stringify(registros));
+            loadRegistrosResumen();
         }
 
         // Ver detalle de un registro en modo readonly
@@ -4096,16 +4446,8 @@
                     obraSelect.dispatchEvent(new Event('change'));
                 }
                 
-                // Esperar a que se cargue la tabla y luego llenar los datos
+                // Esperar a quée se cargue la tabla y luego llenar los datos
                 setTimeout(() => {
-                    // Mostrar aviso si el registro no tiene items (histórico agregado sin desglose)
-                    if (!registro.items || registro.items.length === 0) {
-                        showRegistroAddAlert('Este registro histórico no contiene el desglose por cliente/producto. Puedes ver los totales, pero la edición detallada no está disponible.', 'info');
-                        // Aún recalcular totales para mostrar correctamente
-                        recalcRegistroTotals();
-                        setReadonlyMode(true);
-                        return;
-                    }
                     registro.items.forEach(item => {
                         item.productos.forEach(prod => {
                             const qtyInput = document.getElementById(`rq-${item.clienteId}-${prod.productoId}`);
@@ -4284,7 +4626,7 @@
         }
 
         function openProductosAdmin() {
-            // Asegurar que estamos en la sección Productos
+            // Asegurar quée estamos en la sección Productos
             changeSection('registros-productos');
             try { if (window.bootstrap && bootstrap.Tab) new bootstrap.Tab(document.getElementById('productos-tab-admin')).show(); } catch {}
         }
@@ -4381,7 +4723,7 @@
                                             <form id="form-edit-obra" class="row g-3">
                                                 <div class="col-md-6">
                                                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
-                                                    <input type="text" id="edit-obra-nombre" class="form-control" required />
+                                                    <input type="text" id="edit-obra-nombre" class="form-control" requéired />
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Ubicación</label>
@@ -4437,7 +4779,7 @@
                                 fechaInicio: document.getElementById('edit-obra-fecha-inicio').value,
                                 fechaFin: document.getElementById('edit-obra-fecha-fin').value
                         };
-                        // Actualizar clientes que apuntaban al nombre anterior
+                        // Actualizar clientes quée apuntaban al nombre anterior
                         if (originalNombre !== nuevoNombre) {
                                 clientes.forEach(c => { if (c.obra === originalNombre) c.obra = nuevoNombre; });
                                 // Registros con tipo 'obra'
@@ -4688,7 +5030,7 @@
 
         // Eliminar cliente
         function deleteCliente(id) {
-            if (!confirm('¿Estás seguro de que deseas eliminar este cliente?')) return;
+            if (!confirm('¿Est├ás seguro de quée deseas eliminar este cliente?')) return;
             
             clientes = clientes.filter(c => c.id !== id);
             localStorage.setItem('clientes', JSON.stringify(clientes));
@@ -4797,7 +5139,7 @@
                 container.innerHTML = '<div class="col-12 text-muted small">No hay obras registradas.</div>';
                 return;
             }
-            // Tomar filtros actuales (sin aplicar filtro de obra al agrupar, salvo que esté fijado a una obra específica)
+            // Tomar filtros actuales (sin aplicar filtro de obra al agrupar, salvo quée esté fijado a una obra específica)
             const filterNombre = document.getElementById('filter-nombre')?.value.toLowerCase() || '';
             const filterEstado = document.getElementById('filter-estado')?.value || '';
             const filterFechaInicio = document.getElementById('filter-fecha-inicio')?.value || '';
@@ -4958,7 +5300,7 @@
                     <td><span class="badge bg-${c.estado==='activo'?'success':(c.estado==='pendiente'?'warning':'secondary')}">${(c.estado||'').charAt(0).toUpperCase()+(c.estado||'').slice(1)}</span></td>
                     <td>${c.fecha || ''}</td>
                     <td class="text-end">
-                        <button class="btn btn-light border btn-sm" onclick="removeAddObraClient(${idx})">Quitar</button>
+                        <button class="btn btn-light border btn-sm" onclick="removeAddObraClient(${idx})">quéitar</button>
                     </td>`;
                 tbody.appendChild(tr);
             });
@@ -5020,7 +5362,7 @@
                         renderAddObraClientsTable();
                         showObraImportAlert(`Se importaron ${added} clientes desde Excel.`, 'success');
                     } else {
-                        showObraImportAlert('No se encontraron filas válidas en el archivo.');
+                        showObraImportAlert('No se encontraron filas vílidas en el archivo.');
                     }
                 } catch (err) {
                     showObraImportAlert('Error al leer el Excel: ' + err.message);
@@ -5040,7 +5382,7 @@
                         renderAddObraClientsTable();
                         showObraImportAlert(`Se importaron ${added} clientes desde CSV.`, 'success');
                     } else {
-                        showObraImportAlert('No se encontraron filas válidas en el archivo CSV.');
+                        showObraImportAlert('No se encontraron filas vílidas en el archivo CSV.');
                     }
                 } catch (err) {
                     showObraImportAlert('Error al leer el CSV: ' + err.message);
@@ -5051,7 +5393,7 @@
 
         function importFromPdf(file) {
             if (!window['pdfjsLib']) {
-                showObraImportAlert('pdf.js no está disponible. Intenta con Excel o CSV.');
+                showObraImportAlert('pdf.js no estí disponible. Intenta con Excel o CSV.');
                 return;
             }
             const url = URL.createObjectURL(file);
@@ -5084,7 +5426,7 @@
                     renderAddObraClientsTable();
                     showObraImportAlert(`Se importaron ${added} clientes desde PDF (experimental).`, 'success');
                 } else {
-                    showObraImportAlert('No se pudieron detectar filas válidas en el PDF. Intenta con CSV/Excel.');
+                    showObraImportAlert('No se pudieron detectar filas vílidas en el PDF. Intenta con CSV/Excel.');
                 }
             }).catch(err => {
                 showObraImportAlert('Error al leer el PDF: ' + err.message);
@@ -5160,7 +5502,7 @@
         }
 
         function parseRowsToClientRecords(rows) {
-            // Igual que parseTabularRows pero sin efectos secundarios; devuelve registros y conteo omitidos
+            // Igual quée parseTabularRows pero sin efectos secundarios; devuelve registros y conteo omitidos
             const result = { records: [], skipped: 0 };
             if (!rows || rows.length === 0) return result;
             let startIdx = 0;
@@ -5249,7 +5591,7 @@
                         reader.readAsText(file, 'utf-8');
                     });
                 } else if (name.endsWith('.pdf')) {
-                    if (!window['pdfjsLib']) throw new Error('pdf.js no está disponible. Intenta con Excel o CSV.');
+                    if (!window['pdfjsLib']) throw new Error('pdf.js no estí disponible. Intenta con Excel o CSV.');
                     rows = await (async () => {
                         const url = URL.createObjectURL(file);
                         try {
@@ -5280,7 +5622,7 @@
 
                 const { records, skipped } = parseRowsToClientRecords(rows);
                 if (records.length === 0) {
-                    showAddClientesAlert('No se encontraron filas válidas en el archivo.', 'warning');
+                    showAddClientesAlert('No se encontraron filas vílidas en el archivo.', 'warning');
                     return;
                 }
 
@@ -5317,10 +5659,14 @@
 
         // Inicio
         window.addEventListener('DOMContentLoaded', () => {
-            // Asegurar que todos los inputs de fecha estén en ISO antes de usar filtros
+            // Asegurar quée todos los inputs de fecha estén en ISO antes de usar filtros
             normalizeDateInputs();
             setInitialDateRanges();
             applyPrefs(getPrefs());
+            // Inicializar UI interactiva (selección con relieve en cards)
+            try { initSelectableCards(); } catch {}
+            // Refuerza contraste visual en tarjetas clave
+            try { enhanceDashboardContrast(); } catch {}
             let username = sessionStorage.getItem('username');
             const demoMode = (localStorage.getItem('demo_mode') === '1');
             // Si no hay sesión, permitir continuar en modo demo (útil durante desarrollo)
@@ -5329,7 +5675,7 @@
                     username = 'demo';
                     try { sessionStorage.setItem('username', 'demo'); } catch {}
                 } else {
-                    // No bloquear la vista para depurar: mostrar aviso y continuar sin perfil
+                    // No bloquéear la vista para depurar: mostrar aviso y continuar sin perfil
                     console.warn('No hay sesión activa. Continúas sin perfil. Ve a index.html para iniciar sesión.');
                 }
             }
@@ -5337,7 +5683,7 @@
                 const el = document.getElementById('username-display');
                 if (el) el.textContent = username;
             }
-            // Mostrar aviso si está en modo demo (opcional minimalista: console log)
+            // Mostrar aviso si estí en modo demo (opcional minimalista: console log)
             try {
                 if (localStorage.getItem('demo_mode') === '1') {
                     console.info('Modo demo activo: operando sin backend.');
@@ -5357,7 +5703,7 @@
             loadObrasSelect();
             // Cargar resumen de inicio inmediatamente (evita esperar primer cambioSection)
             try { loadInicioResumen(); } catch (e) { console.warn('Fallo al cargar resumen inicio inicial:', e); }
-            // Asegurar título dinámico si existe el contenedor (opcional)
+            // Asegurar título dinímico si existe el contenedor (opcional)
             if (!document.getElementById('page-title')) {
                 const h = document.createElement('h1');
                 h.id = 'page-title';
@@ -5382,22 +5728,22 @@
                     <form id="form-add-cliente">
                         <div class="mb-3">
                             <label for="cliente-nombre" class="form-label">Nombre completo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="cliente-nombre" required>
+                            <input type="text" class="form-control" id="cliente-nombre" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="cliente-cedula" class="form-label">Cédula <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="cliente-cedula" required>
+                            <input type="text" class="form-control" id="cliente-cedula" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="cliente-obra" class="form-label">Obra <span class="text-danger">*</span></label>
-                            <select class="form-select" id="cliente-obra" required>
+                            <select class="form-select" id="cliente-obra" requéired>
                                 <option value="">Seleccione una obra...</option>
-                                <!-- Las opciones se cargarán dinámicamente -->
+                                <!-- Las opciones se cargarín dinímicamente -->
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="cliente-estado" class="form-label">Estado <span class="text-danger">*</span></label>
-                            <select class="form-select" id="cliente-estado" required>
+                            <select class="form-select" id="cliente-estado" requéired>
                                 <option value="activo">Activo</option>
                                 <option value="inactivo">Inactivo</option>
                                 <option value="pendiente">Pendiente</option>
@@ -5405,7 +5751,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="cliente-fecha" class="form-label">Fecha de registro <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="cliente-fecha" data-datepicker="modern" required>
+                            <input type="text" class="form-control" id="cliente-fecha" data-datepicker="modern" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="cliente-telefono" class="form-label">Teléfono</label>
@@ -5441,7 +5787,7 @@
                     <form id="form-add-obra">
                         <div class="mb-3">
                             <label for="obra-nombre" class="form-label">Nombre de la obra <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="obra-nombre" required>
+                            <input type="text" class="form-control" id="obra-nombre" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="obra-ubicacion" class="form-label">Ubicación</label>
@@ -5552,21 +5898,21 @@
                         <input type="hidden" id="edit-cliente-id">
                         <div class="mb-3">
                             <label for="edit-cliente-nombre" class="form-label">Nombre completo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit-cliente-nombre" required>
+                            <input type="text" class="form-control" id="edit-cliente-nombre" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="edit-cliente-cedula" class="form-label">Cédula <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit-cliente-cedula" required>
+                            <input type="text" class="form-control" id="edit-cliente-cedula" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="edit-cliente-obra" class="form-label">Obra <span class="text-danger">*</span></label>
-                            <select class="form-select" id="edit-cliente-obra" required>
+                            <select class="form-select" id="edit-cliente-obra" requéired>
                                 <option value="">Seleccione una obra...</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="edit-cliente-estado" class="form-label">Estado <span class="text-danger">*</span></label>
-                            <select class="form-select" id="edit-cliente-estado" required>
+                            <select class="form-select" id="edit-cliente-estado" requéired>
                                 <option value="activo">Activo</option>
                                 <option value="inactivo">Inactivo</option>
                                 <option value="pendiente">Pendiente</option>
@@ -5574,7 +5920,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="edit-cliente-fecha" class="form-label">Fecha de registro <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit-cliente-fecha" data-datepicker="modern" required>
+                            <input type="text" class="form-control" id="edit-cliente-fecha" data-datepicker="modern" requéired>
                         </div>
                         <div class="mb-3">
                             <label for="edit-cliente-telefono" class="form-label">Teléfono</label>
@@ -5635,9 +5981,11 @@
         const yearRow = document.createElement('div');
         yearRow.className = 'mdp-year-row';
         const prev = document.createElement('button');
-        prev.type = 'button'; prev.className = 'mdp-arrow'; prev.textContent = '◀';
+        prev.type = 'button'; prev.className = 'mdp-arrow'; prev.setAttribute('aria-label','Anterior');
+        prev.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
         const next = document.createElement('button');
-        next.type = 'button'; next.className = 'mdp-arrow'; next.textContent = '▶';
+        next.type = 'button'; next.className = 'mdp-arrow'; next.setAttribute('aria-label','Siguiente');
+        next.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
         const yearLabel = document.createElement('span'); yearLabel.className='mdp-year';
         yearRow.appendChild(prev); yearRow.appendChild(yearLabel); yearRow.appendChild(next);
         const monthRow = document.createElement('div');
@@ -5740,7 +6088,7 @@
           
                     // Normalizar valor actual (si viene dd-mm-aaaa lo pasamos a ISO)
                     if (input.value) {
-                        // Usar el helper global para normalizar cualquier formato a ISO
+                        // Usar el helper global para normalizar cualquéier formato a ISO
                         input.value = convertDateToISO(input.value.trim());
                     }
 
@@ -5777,3 +6125,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
+
