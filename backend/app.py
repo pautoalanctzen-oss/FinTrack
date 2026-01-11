@@ -123,12 +123,13 @@ def get_db():
 def init_db():
     """Inicializa la base de datos con todas las tablas necesarias."""
     try:
-        logger.info("Inicializando base de datos...")
+        logger.info(f"Inicializando base de datos... USE_POSTGRES={USE_POSTGRES}")
         with get_db() as conn:
             cursor = conn.cursor()
+            logger.info("✅ Conexión a DB exitosa")
             
             if USE_POSTGRES:
-                # PostgreSQL - usar SERIAL en lugar de AUTOINCREMENT
+                logger.info("Creando tablas PostgreSQL...")
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS users (
                         id SERIAL PRIMARY KEY,
@@ -139,6 +140,7 @@ def init_db():
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
+                logger.info("✅ Tabla users creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS obras (
@@ -151,6 +153,7 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla obras creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS clientes (
@@ -165,6 +168,7 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla clientes creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS productos (
@@ -176,6 +180,7 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla productos creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS registros (
@@ -193,8 +198,9 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla registros creada")
             else:
-                # SQLite - usar AUTOINCREMENT
+                logger.info("Creando tablas SQLite...")
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -205,6 +211,7 @@ def init_db():
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
+                logger.info("✅ Tabla users creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS obras (
@@ -217,6 +224,7 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla obras creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS clientes (
@@ -231,6 +239,7 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla clientes creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS productos (
@@ -242,6 +251,7 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla productos creada")
                 
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS registros (
@@ -259,11 +269,14 @@ def init_db():
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 """)
+                logger.info("✅ Tabla registros creada")
             
             conn.commit()
-        logger.info("Base de datos inicializada correctamente")
+            logger.info("✅ Commit realizado")
+        logger.info("✅✅✅ Base de datos inicializada CORRECTAMENTE")
     except Exception as e:
-        logger.warning(f"No se pudo inicializar todas las tablas en DB: {e}. Continuando...")
+        logger.error(f"❌❌❌ CRÍTICO: No se pudo inicializar DB: {e}")
+        logger.error(traceback.format_exc())
             
             if USE_POSTGRES:
                 # PostgreSQL - usar SERIAL en lugar de AUTOINCREMENT
