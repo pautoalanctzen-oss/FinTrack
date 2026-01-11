@@ -572,10 +572,9 @@ async def api_login(username: str = Form(...), password: str = Form(...)):
     try:
         logger.info(f"Intento de login para usuario: {username}")
         with get_db() as conn:
-            cursor = conn.execute(
-                "SELECT password_hash FROM users WHERE username = ?",
-                (username,)
-            )
+            cursor = conn.cursor()
+            query, params = sql("SELECT password_hash FROM users WHERE username = ?", (username,))
+            cursor.execute(query, params)
             row = cursor.fetchone()
             
             if not row:
@@ -583,7 +582,7 @@ async def api_login(username: str = Form(...), password: str = Form(...)):
                 return {"username": username, "authenticated": False, "message": "Credenciales inválidas"}
             
             # Verificar contraseña con bcrypt
-            password_hash = row["password_hash"]
+            password_hash = row["password_hash"] if isinstance(row, dict) else row[0]
             if bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')):
                 logger.info(f"Login exitoso para usuario: {username}")
                 return {"username": username, "authenticated": True, "message": "Autenticado correctamente"}
@@ -657,11 +656,17 @@ async def api_register(
 async def get_user(username: str):
     """Obtiene datos públicos del usuario (email, username, birthdate, created_at)."""
     with get_db() as conn:
-        cur = conn.execute("SELECT email, username, birthdate, created_at FROM users WHERE username = ?", (username,))
-        row = cur.fetchone()
+        cursor = conn.cursor()
+        query, params = sql("SELECT email, username, birthdate, created_at FROM users WHERE username = ?", (username,))
+        cursor.execute(query, params)
+        row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail={"message": "Usuario no encontrado"})
-        return {"email": row["email"], "username": row["username"], "birthdate": row["birthdate"], "created_at": row["created_at"]}
+        email = row["email"] if isinstance(row, dict) else row[0]
+        user = row["username"] if isinstance(row, dict) else row[1]
+        birthdate = row["birthdate"] if isinstance(row, dict) else row[2]
+        created = row["created_at"] if isinstance(row, dict) else row[3]
+        return {"email": email, "username": user, "birthdate": birthdate, "created_at": created}
 
 
 @app.post("/api/settings/update-email")
@@ -729,16 +734,20 @@ async def update_password(
         raise HTTPException(status_code=400, detail={"message": "La contraseña no cumple los criterios"})
 
     with get_db() as conn:
-        cur = conn.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
-        row = cur.fetchone()
+        cursor = conn.cursor()
+        query, params = sql("SELECT password_hash FROM users WHERE username = ?", (username,))
+        cursor.execute(query, params)
+        row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail={"message": "Usuario no encontrado"})
         # verificar contraseña actual
-        if not bcrypt.checkpw(current_password.encode('utf-8'), row["password_hash"].encode('utf-8')):
+        password_hash = row["password_hash"] if isinstance(row, dict) else row[0]
+        if not bcrypt.checkpw(current_password.encode('utf-8'), password_hash.encode('utf-8')):
             raise HTTPException(status_code=400, detail={"message": "La contraseña actual es incorrecta"})
         # actualizar
         new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        conn.execute("UPDATE users SET password_hash = ? WHERE username = ?", (new_hash, username))
+        query, params = sql("UPDATE users SET password_hash = ? WHERE username = ?", (new_hash, username))
+        cursor.execute(query, params)
         conn.commit()
     return {"success": True}
 
