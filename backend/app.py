@@ -126,14 +126,144 @@ def init_db():
         logger.info("Inicializando base de datos...")
         with get_db() as conn:
             cursor = conn.cursor()
+            
+            if USE_POSTGRES:
+                # PostgreSQL - usar SERIAL en lugar de AUTOINCREMENT
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id SERIAL PRIMARY KEY,
+                        email TEXT UNIQUE NOT NULL,
+                        username TEXT UNIQUE NOT NULL,
+                        birthdate TEXT NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS obras (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        ubicacion TEXT,
+                        estado TEXT DEFAULT 'activa',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS clientes (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        cedula TEXT,
+                        obra TEXT,
+                        estado TEXT DEFAULT 'activo',
+                        fecha TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS productos (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        precio REAL NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS registros (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        fecha TEXT,
+                        obra TEXT,
+                        totalCantidad INTEGER DEFAULT 0,
+                        totalCobrar REAL DEFAULT 0,
+                        totalPagado REAL DEFAULT 0,
+                        status TEXT DEFAULT 'pendiente',
+                        clientesAdicionales TEXT,
+                        detalles TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+            else:
+                # SQLite - usar AUTOINCREMENT
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        email TEXT UNIQUE NOT NULL,
+                        username TEXT UNIQUE NOT NULL,
+                        birthdate TEXT NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS obras (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        ubicacion TEXT,
+                        estado TEXT DEFAULT 'activa',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS clientes (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        cedula TEXT,
+                        obra TEXT,
+                        estado TEXT DEFAULT 'activo',
+                        fecha TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS productos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        nombre TEXT NOT NULL,
+                        precio REAL NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS registros (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        fecha TEXT,
+                        obra TEXT,
+                        totalCantidad INTEGER DEFAULT 0,
+                        totalCobrar REAL DEFAULT 0,
+                        totalPagado REAL DEFAULT 0,
+                        status TEXT DEFAULT 'pendiente',
+                        clientesAdicionales TEXT,
+                        detalles TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """)
+            
+            conn.commit()
+        logger.info("Base de datos inicializada correctamente")
     except Exception as e:
-        logger.warning(f"No se pudo conectar a la base de datos al inicio: {e}. Continuando con fallback...")
-        return  # Permite que el app inicie aunque DB no esté disponible
-    
-    try:
-        logger.info("Inicializando base de datos...")
-        with get_db() as conn:
-            cursor = conn.cursor()
+        logger.warning(f"No se pudo inicializar todas las tablas en DB: {e}. Continuando...")
             
             if USE_POSTGRES:
                 # PostgreSQL - usar SERIAL en lugar de AUTOINCREMENT
