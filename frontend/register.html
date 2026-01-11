@@ -192,7 +192,7 @@
     <script>
       const BASE_API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
           ? "http://127.0.0.1:8000"
-          : "https://aplicaci-n-mi.onrender.com";
+          : "https://fin-track-8r3y.onrender.com";
       const form = document.getElementById('register-form');
       const alertBox = document.getElementById('alert');
       const submitBtn = document.getElementById('submit-btn');
@@ -424,7 +424,7 @@
             if (!navigator.onLine) {
               msg = 'Parece que no hay conexión a internet. Verifica tu red.';
             } else {
-              msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté activo (https://aplicaci-n-mi.onrender.com/health) y que ningún firewall/antivirus lo bloquee.`;
+              msg = `No se pudo conectar con el servidor en ${BASE_API}. Verifica que esté activo (https://fin-track-8r3y.onrender.com/health) y que ningún firewall/antivirus lo bloquee.`;
             }
           }
           showAlert(msg, 'danger');
