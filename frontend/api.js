@@ -10,7 +10,7 @@ const API = {
         const override = (typeof window !== 'undefined') && (window.API_BASE_URL || (window.env && window.env.API_BASE_URL));
         if (override && typeof override === 'string' && override.trim()) return override.trim();
         const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '' || window.location.protocol === 'file:');
-        return isLocal ? "http://127.0.0.1:8000" : "https://aplicaci-n-mi.onrender.com";
+        return isLocal ? "http://127.0.0.1:8000" : "https://fin-track-8r3y.onrender.com";
     })(),
     
     // Obtener username actual
