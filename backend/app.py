@@ -49,6 +49,12 @@ if USE_POSTGRES:
     logger.info(f"Usando PostgreSQL en producción")
 else:
     logger.info(f"Usando SQLite: {DB_PATH}")
+    # Diagnóstico rápido: por seguridad, no mostramos credenciales ni URL completa
+    logger.info(
+        "Diagnóstico DB -> POSTGRES_AVAILABLE=%s, DATABASE_URL_set=%s",
+        POSTGRES_AVAILABLE,
+        bool(DATABASE_URL)
+    )
 
 
 @contextmanager
