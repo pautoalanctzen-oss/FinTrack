@@ -132,6 +132,14 @@ def init_db():
         logger.info("Inicializando base de datos...")
         with get_db() as conn:
             cursor = conn.cursor()
+    except Exception as e:
+        logger.warning(f"No se pudo conectar a la base de datos al inicio: {e}. Continuando con fallback...")
+        return  # Permite que el app inicie aunque DB no esté disponible
+    
+    try:
+        logger.info("Inicializando base de datos...")
+        with get_db() as conn:
+            cursor = conn.cursor()
             
             if USE_POSTGRES:
                 # PostgreSQL - usar SERIAL en lugar de AUTOINCREMENT
@@ -271,8 +279,7 @@ def init_db():
             conn.commit()
         logger.info("Base de datos inicializada correctamente")
     except Exception as e:
-        logger.critical(f"Error crítico al inicializar la base de datos: {e}")
-        raise
+        logger.warning(f"No se pudo inicializar todas las tablas en DB: {e}. Continuando con fallback...")
 
 
 # Inicializar DB al arrancar
