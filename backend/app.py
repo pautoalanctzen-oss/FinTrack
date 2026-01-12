@@ -571,12 +571,14 @@ async def login(request: Request, username: str = Form(...), password: str = For
 
 @app.post("/api/login")
 async def api_login(username: str = Form(...), password: str = Form(...)):
-    """API JSON para login desde el frontend - verifica contra DB."""
+    """API para login desde el frontend - verifica contra DB."""
+    logger.info(f"POST /api/login - username: {username}")
     try:
         logger.info(f"Intento de login para usuario: {username}")
         with get_db() as conn:
             cursor = conn.cursor()
             query, params = sql("SELECT password_hash FROM users WHERE username = ?", (username,))
+            logger.debug(f"Query: {query}, Params: {params}")
             cursor.execute(query, params)
             row = cursor.fetchone()
             
@@ -593,8 +595,8 @@ async def api_login(username: str = Form(...), password: str = Form(...)):
                 logger.warning(f"Contraseña incorrecta para usuario: {username}")
                 return {"username": username, "authenticated": False, "message": "Credenciales inválidas"}
     except Exception as e:
-        logger.error(f"Error en login para {username}: {e}")
-        raise HTTPException(status_code=500, detail={"message": "Error al procesar login"})
+        logger.error(f"Error en login para {username}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail={"message": f"Error al procesar login: {str(e)}"})
 
 
 @app.post("/api/register")
