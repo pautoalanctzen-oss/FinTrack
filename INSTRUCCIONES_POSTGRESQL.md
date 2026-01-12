@@ -1,144 +1,74 @@
-# 🚀 Solución Definitiva: Base de Datos Permanente con PostgreSQL
+# 🚀 Base de Datos Permanente: PostgreSQL con Neon (Gratis y Duradero)
 
-## ⚠️ PROBLEMA ACTUAL
-- **Render borra SQLite** cada vez que el servidor se reinicia
-- **Los datos se pierden** al cerrar o actualizar la aplicación
-- Necesitas una base de datos que **persista para siempre**
+## ⚠️ Problema
+- En Render Free, el almacenamiento del contenedor es efímero: **SQLite se borra** en redeploys o reinicios.
+- Necesitas persistencia real sin pagar y sin fecha de caducidad.
 
-## ✅ SOLUCIÓN: PostgreSQL Gratuito de Render
-**PostgreSQL es una base de datos permanente** que NUNCA pierde datos.
+## ✅ Solución Recomendada: Neon (Plan Free)
+Neon ofrece PostgreSQL administrado con **persistencia duradera**, **SSL**, y **autosleep**. El plan gratuito mantiene tus datos (no expiran) y es perfecto para este proyecto.
 
 ---
 
-## 📋 PASOS PARA CONFIGURAR (5 minutos)
+## 📋 Pasos de Configuración (≈10 minutos)
 
-### Paso 1: Subir cambios a GitHub
-```powershell
-cd "c:\Users\pauto\OneDrive\Escritorio\Uni Docs\9 semestre\Integradora\Solución MI"
+### Paso 1: Crear la base en Neon
+1. Ve a https://neon.tech → Sign up.
+2. Create Project:
+   - **Project name**: `fintrack`
+   - **Region**: cercana a Oregon (p. ej., `aws-us-west-2`).
+   - **Database**: `fintrack_db2`
+   - **Role/User**: `fintrack_user1`
+3. Copia el **Connection string** tipo `postgres://USER:PASSWORD@HOST/fintrack_db2`.
+4. Añade `?sslmode=require` al final: `.../fintrack_db2?sslmode=require`.
 
-git add .
-git commit -m "Migración a PostgreSQL para persistencia permanente"
-git push
-```
-
-### Paso 2: Crear Base de Datos PostgreSQL en Render
-
-1. Ve a [render.com](https://dashboard.render.com/)
-2. Clic en "**New +**" → "**PostgreSQL**"
-3. Configuración:
-   - **Name**: `aplicacion-mi-db`
-   - **Database**: `aplicacion_mi_db`
-   - **User**: `aplicacion_user`
-   - **Region**: Oregon (US West)
-   - **PostgreSQL Version**: 16
-   - **Plan**: **Free**
-   
-4. Clic en "**Create Database**"
-5. **¡IMPORTANTE!** Espera 2-3 minutos mientras se crea
-6. Copia la **Internal Database URL** (la que dice `postgres://...`)
-
-### Paso 3: Configurar Backend con la Base de Datos
-
-1. En Render, ve a tu servicio **aplicacion-mi-backend**
-2. Ve a "**Environment**" (en el menú lateral)
-3. Clic en "**Add Environment Variable**"
-4. Agregar:
+### Paso 2: Configurar el backend en Render
+1. En tu servicio backend, abre **Environment**.
+2. Agrega/actualiza la variable:
    - **Key**: `DATABASE_URL`
-   - **Value**: Pega la Internal Database URL que copiaste
-   
-5. Clic en "**Save Changes**"
-6. El servidor se **reiniciará automáticamente** (tarda ~2 minutos)
+   - **Value**: el connection string de Neon con `?sslmode=require`.
+3. Guarda y **redeploy** el servicio.
 
-### Paso 4: Verificar que Funciona
+### Paso 3: Verificar salud
+1. Abre `/health` de tu backend.
+2. Logs deben indicar: PostgreSQL activo y `DATABASE_URL` detectado.
 
-1. Abre el link de tu aplicación: `https://aplicacion-mi.vercel.app`
-2. Intenta hacer login con cualquier usuario
-3. Si no existe, créalo desde "Registrarse"
-4. **¡Los datos ahora persisten para siempre!**
-
----
-
-## 🔧 RECUPERAR DATOS ANTERIORES
-
-Si ya habías migrado datos antes, necesitas hacerlo de nuevo una vez:
-
-### Opción 1: Usar el endpoint de importación
-
-1. Asegúrate de tener tu backup en `backups/api_snapshot_2026-01-09.json`
-2. Abre la consola de desarrollador (F12) en el navegador
-3. Pega y ejecuta:
-
-```javascript
-const formData = new FormData();
-const fileInput = document.createElement('input');
-fileInput.type = 'file';
-fileInput.onchange = async (e) => {
-    formData.append('file', e.target.files[0]);
-    const response = await fetch('https://aplicaci-n-mi.onrender.com/api/import-backup', {
-        method: 'POST',
-        body: formData
-    });
-    const result = await response.json();
-    console.log('Importación:', result);
-};
-fileInput.click();
-```
-
-### Opción 2: Registrar usuario manualmente
-
-Si solo necesitas tu usuario principal:
-
-1. Ve a la página de registro
-2. Crea el usuario:
-   - **Username**: `Panchita's Catering`
-   - **Email**: `cotoala@gmail.com`
-   - **Contraseña**: La que tú quieras (recuérdala)
-   - **Fecha de nacimiento**: `1982-08-30`
+### Paso 4: Importar tus datos
+Opciones:
+- Desde la UI de la app (importar respaldo).
+- O vía API con el archivo en `backups/api_snapshot_2026-01-09.json`.
 
 ---
 
-## 🎯 VENTAJAS DE POSTGRESQL
-
-✅ **Datos permanentes** - NUNCA se borran
-✅ **Una sola base de datos** - No hay duplicaciones
-✅ **Completamente gratis** - Plan free de Render
-✅ **500 MB de almacenamiento** - Suficiente para miles de registros
-✅ **Sin limite de tiempo** - Funciona indefinidamente
-✅ **Backups automáticos** - Render hace respaldos diarios
+## 🔧 Notas de Operación
+- Neon Free es **sin costo** y **sin expiración**; puede entrar en "autosleep" tras inactividad, la **primera conexión** tarda unos segundos.
+- Rendimiento adecuado para tráfico bajo/medio; si necesitas más, puedes subir de plan después.
 
 ---
 
-## 📊 ESTADO ACTUAL
+## 🆘 Troubleshooting
+**No conecta / error SSL**
+- Verifica que el `DATABASE_URL` termine con `?sslmode=require`.
+- Confirma credenciales y que el proyecto Neon esté activo.
 
-- ✅ Código actualizado para PostgreSQL
-- ✅ Compatibilidad con SQLite (desarrollo local)
-- ✅ render.yaml configurado para crear DB automáticamente
-- ✅ Requirements actualizado con psycopg2
-- ⏳ Pendiente: Desplegar en Render
+**"relation does not exist"**
+- Ejecuta nuevamente la inicialización del esquema (el backend la crea al iniciar) o haz un redeploy.
 
----
-
-## 🆘 SOLUCIÓN DE PROBLEMAS
-
-### Error: "No se pudo conectar a la base de datos"
-- Verifica que la variable `DATABASE_URL` esté configurada en Render
-- Asegúrate de que la base de datos PostgreSQL esté activa (estado "Available")
-
-### Error: "relation does not exist"
-- Las tablas no se han creado
-- Reinicia el servidor backend en Render
-- Verifica los logs del servidor
-
-### Los datos se siguen borrando
-- Confirma que estás usando la URL de producción: `https://aplicacion-mi.vercel.app`
-- NO uses localhost, los datos en local son diferentes
+**Sigue usando SQLite**
+- Asegúrate de haber definido `DATABASE_URL` en Render y que los logs no muestren modo SQLite.
 
 ---
 
-## 📞 SIGUIENTE PASO
+## 📊 Estado / Compatibilidad
+- Backend preparado para conmutar entre SQLite y PostgreSQL automáticamente según `DATABASE_URL`.
+- `psycopg2-binary` actualizado para compatibilidad.
+- Frontend listo; no requiere cambios.
 
-**ACCIÓN REQUERIDA**: 
-1. Sube los cambios a GitHub (Paso 1)
-2. Crea la base de datos PostgreSQL en Render (Paso 2)
-3. Configura DATABASE_URL (Paso 3)
-4. ¡Listo! Los datos persisten para siempre
+---
+
+## ✅ Checklist rápido
+- [ ] Neon creado y connection string copiado.
+- [ ] `DATABASE_URL` configurado en Render con `?sslmode=require`.
+- [ ] `/health` OK y logs muestran PostgreSQL.
+- [ ] Respaldo importado.
+
+Con esto, tus datos **no se pierden** y **no tienes que pagar**.
